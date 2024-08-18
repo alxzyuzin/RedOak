@@ -1,5 +1,6 @@
 import urllib.request;
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 from datetime import datetime
 import numpy as np
 
@@ -59,20 +60,15 @@ class StockData:
             self.volume.append(float(lineData[6]))
             self.shortMA.append(0.0)
             self.longMA.append(0.0)
-
-            #i=0
-            #r = range(0,20)
-            #for k in  r:
-            #    i+=1
-            #f=1
-
+        i=0
+         
     def calculateShortMA(self):
       
         i = 0
         while i < (len(self.date) - SHORT_TERM_MA_LENGTH + 1):
             priceTotal = 0
             # Sum closing prices for short term period
-            for j in range(i,SHORT_TERM_MA_LENGTH + i -1): 
+            for j in range(i,SHORT_TERM_MA_LENGTH + i): 
                 priceTotal += self.closePrice[j] 
             # Calculate average price for this period
             self.shortMA[SHORT_TERM_MA_LENGTH + i -1] = priceTotal / SHORT_TERM_MA_LENGTH
@@ -85,7 +81,7 @@ class StockData:
         while i < (len(self.date) - LONG_TERM_MA_LENGTH + 1):
             priceTotal = 0
             # Sum closing prices for short term period
-            for j in range(i,LONG_TERM_MA_LENGTH + i -1): 
+            for j in range(i,LONG_TERM_MA_LENGTH + i): 
                 priceTotal += self.closePrice[j] 
             # Calculate average price for this period
             self.longMA[LONG_TERM_MA_LENGTH + i -1] = priceTotal / LONG_TERM_MA_LENGTH
@@ -93,8 +89,24 @@ class StockData:
         k=0
 
     def displayData(self):
-        plt.plot(np.array(self.date), np.array(self.openPrice))
+        
+        plt.plot(np.array(self.date[LONG_TERM_MA_LENGTH:]), 
+                 np.array(self.closePrice[LONG_TERM_MA_LENGTH:]),
+                 label = "Daily prices")
+        plt.plot(np.array(self.date[LONG_TERM_MA_LENGTH:]),
+                 np.array(self.shortMA[LONG_TERM_MA_LENGTH:]),
+                 label = "Short moving average")
+        plt.plot(np.array(self.date[LONG_TERM_MA_LENGTH:]),
+                 np.array(self.longMA[LONG_TERM_MA_LENGTH:]),
+                 label = "Long moveng average")
+        plt.legend()
+        plt.title(self.simbol)
+        plt.xticks(fontsize=10, color='blue', rotation=45)
+        plt.minorticks_on()
+        
+        
         plt.show()
+        k=1
 
     @property
     def Date(self):
