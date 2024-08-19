@@ -1,7 +1,7 @@
 import urllib.request;
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plot
 import matplotlib.dates as mdates
-from datetime import datetime
+from datetime import datetime, timedelta
 import numpy as np
 
 SHORT_TERM_MA_LENGTH = 20
@@ -15,10 +15,21 @@ class StockData:
 
     def __init__(self):
         self.simbol = ""
+
+        # period1 - the beginning of interval for retriving data
+        # period2 - the end of interval for retriving data
+        # value of parameters nubmer of seconds from 01/01/1970
+
         self.urlstrHead = 'https://query1.finance.yahoo.com/v7/finance/download/'
+                         # https://query1.finance.yahoo.com/v7/finance/download/
         self.urlstrTail = '?period1=1691277249&period2=1722899649&interval=1d&events=history&includeAdjustedClose=true'
+                         # ?period1=1692325667&period2=1723948067&interval=1d&events=history&includeAdjustedClose=true
+        
+               
         self.rawData = ""
 
+       
+        #FSELX
         self.date       = []
         self.openPrice  = []
         self.highPrice  = []
@@ -90,22 +101,64 @@ class StockData:
 
     def displayData(self):
         
-        plt.plot(np.array(self.date[LONG_TERM_MA_LENGTH:]), 
-                 np.array(self.closePrice[LONG_TERM_MA_LENGTH:]),
+        #plt.plot(np.array(self.date[LONG_TERM_MA_LENGTH:]), 
+        #         np.array(self.closePrice[LONG_TERM_MA_LENGTH:]),
+        #         label = "Daily prices")
+        #plt.plot(np.array(self.date[LONG_TERM_MA_LENGTH:]),
+        #         np.array(self.shortMA[LONG_TERM_MA_LENGTH:]),
+        #         label = "Short moving average")
+        #plt.plot(np.array(self.date[LONG_TERM_MA_LENGTH:]),
+        #         np.array(self.longMA[LONG_TERM_MA_LENGTH:]),
+        #         label = "Long moveng average")
+        #plt.legend()
+        #plt.title(self.simbol)
+        #plt.xticks(fontsize=10, color='blue', rotation=45)
+        #plt.minorticks_on()
+        #------------------- Test code -----------------------
+        
+        startvalue = LONG_TERM_MA_LENGTH
+        fig, plt = plot.subplots()
+        fig.text(10,10,self.simbol)
+        plt.plot(self.date[startvalue:], self.closePrice[startvalue:],
                  label = "Daily prices")
-        plt.plot(np.array(self.date[LONG_TERM_MA_LENGTH:]),
-                 np.array(self.shortMA[LONG_TERM_MA_LENGTH:]),
+        plt.plot(self.date[startvalue:], self.shortMA[startvalue:],
                  label = "Short moving average")
-        plt.plot(np.array(self.date[LONG_TERM_MA_LENGTH:]),
-                 np.array(self.longMA[LONG_TERM_MA_LENGTH:]),
+        plt.plot(self.date[startvalue:], self.longMA[startvalue:],
                  label = "Long moveng average")
+        
         plt.legend()
-        plt.title(self.simbol)
-        plt.xticks(fontsize=10, color='blue', rotation=45)
-        plt.minorticks_on()
+        #plt.title() #.title(self.simbol)
+        #plt.xticks(fontsize=10, color='blue', rotation=45)
+
+        years = mdates.YearLocator()   # every year
+        months = mdates.MonthLocator()  # every month
+        days   = mdates.DayLocator()
+        monthsFmt = mdates.DateFormatter('%Y-%m')
+        # format the ticks
+        plt.xaxis.set_major_locator(months)
+        plt.xaxis.set_major_formatter(monthsFmt)
+        plt.xaxis.set_minor_locator(days)
+
+        #datemin = min(self.date)
+        datemin = self.date[startvalue]
+        datemax = max(self.date)
+        plt.set_xlim(datemin, datemax)
+
+
+        # format the coords message box
+        def price(x):
+            return '$%2.3f' % x
+        plt.format_xdata = mdates.DateFormatter('%Y-%m-%d')
+        plt.format_ydata = price
+        plt.grid(True)
+
+        # rotates and right aligns the x labels, and moves the bottom of the
+        # axes up to make room for them
+        fig.autofmt_xdate()
+
+# -------------------- Test code ------------------------
         
-        
-        plt.show()
+        plot.show()
         k=1
 
     @property
@@ -122,9 +175,29 @@ class StockData:
         pass       
 
 
+def ticksToDateTime(t):
+    converted_ticks = datetime.now() - timedelta(seconds= t)
+    return converted_ticks.strftime("%Y-%m-%d %H:%M:%S")
 
+def ticksFromZeroTime():
+    #d = datetime.datetime.strptime( "20170108233000", "%Y%m%d%H%M%S")
+    
+    d = datetime.strptime ( "20240818023000", "%Y%m%d%H%M%S")
+    t0 = datetime(1970, 1, 1, 0, 0, 0)
+    ticks = (d - t0).total_seconds()
+    return ticks
 
 def main():
+            # 1723 937 400
+ #1691277249 17 228 99 649
+ #1692325667 17 239 48 067
+    ts = ticksFromZeroTime()
+    s1 = ticksToDateTime(1691277249) # '2024-08-17 22:51:51'
+    e1 = ticksToDateTime(1722899649)
+    
+    s2 = ticksToDateTime(1692325667)
+    e2 = ticksToDateTime(1723948067)
+
     sd = StockData()
     sd.loadData("FSELX")
     sd.calculateShortMA()
