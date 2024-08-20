@@ -1,6 +1,7 @@
 import urllib.request;
-import matplotlib.pyplot as plot
+import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+from matplotlib.dates import ConciseDateFormatter
 from datetime import datetime, timedelta
 import numpy as np
 
@@ -100,65 +101,49 @@ class StockData:
         k=0
 
     def displayData(self):
-        
-        #plt.plot(np.array(self.date[LONG_TERM_MA_LENGTH:]), 
-        #         np.array(self.closePrice[LONG_TERM_MA_LENGTH:]),
-        #         label = "Daily prices")
-        #plt.plot(np.array(self.date[LONG_TERM_MA_LENGTH:]),
-        #         np.array(self.shortMA[LONG_TERM_MA_LENGTH:]),
-        #         label = "Short moving average")
-        #plt.plot(np.array(self.date[LONG_TERM_MA_LENGTH:]),
-        #         np.array(self.longMA[LONG_TERM_MA_LENGTH:]),
-        #         label = "Long moveng average")
-        #plt.legend()
-        #plt.title(self.simbol)
-        #plt.xticks(fontsize=10, color='blue', rotation=45)
-        #plt.minorticks_on()
-        #------------------- Test code -----------------------
-        
+               
         startvalue = LONG_TERM_MA_LENGTH
-        fig, plt = plot.subplots()
-        fig.text(10,10,self.simbol)
-        plt.plot(self.date[startvalue:], self.closePrice[startvalue:],
-                 label = "Daily prices")
-        plt.plot(self.date[startvalue:], self.shortMA[startvalue:],
+        fig, ax = plt.subplots()
+
+        fig.set_size_inches(18,10) 
+        fig.suptitle('Historic prices for simbol ' + self.simbol, fontsize=16)
+      
+        ax.plot(self.date[startvalue:], self.closePrice[startvalue:],
+                 label = "Daily prices", color='gray', linewidth = 1)
+        ax.plot(self.date[startvalue:], self.shortMA[startvalue:],
                  label = "Short moving average")
-        plt.plot(self.date[startvalue:], self.longMA[startvalue:],
-                 label = "Long moveng average")
+        ax.plot(self.date[startvalue:], self.longMA[startvalue:],
+                 label = "Long moving average")
         
-        plt.legend()
-        #plt.title() #.title(self.simbol)
-        #plt.xticks(fontsize=10, color='blue', rotation=45)
-
-        years = mdates.YearLocator()   # every year
+        ax.legend()
+        ax.set_title(self.simbol)
+        ax.grid(True)
+        
+        # format the major ticks
+        #years = mdates.YearLocator()    # every year
         months = mdates.MonthLocator()  # every month
-        days   = mdates.DayLocator()
         monthsFmt = mdates.DateFormatter('%Y-%m')
-        # format the ticks
-        plt.xaxis.set_major_locator(months)
-        plt.xaxis.set_major_formatter(monthsFmt)
-        plt.xaxis.set_minor_locator(days)
+        ax.xaxis.set_major_locator(months)
+        ax.xaxis.set_major_formatter(monthsFmt)
+        #
+        # format the minor ticks
+        days   = mdates.DayLocator()    # every day
+        #daysFmt = mdates.DateFormatter('%d')
+        ax.xaxis.set_minor_locator(days)
+        #ax.xaxis.set_minor_formatter(daysFmt)
 
-        #datemin = min(self.date)
+        #ax.xaxis.set_major_formatter(
+        #    ConciseDateFormatter(ax.xaxis.get_major_locator()))
+
         datemin = self.date[startvalue]
         datemax = max(self.date)
-        plt.set_xlim(datemin, datemax)
-
-
-        # format the coords message box
-        def price(x):
-            return '$%2.3f' % x
-        plt.format_xdata = mdates.DateFormatter('%Y-%m-%d')
-        plt.format_ydata = price
-        plt.grid(True)
-
+        ax.set_xlim(datemin, datemax)
+        
         # rotates and right aligns the x labels, and moves the bottom of the
         # axes up to make room for them
-        fig.autofmt_xdate()
-
-# -------------------- Test code ------------------------
-        
-        plot.show()
+        #fig.autofmt_xdate()
+ 
+        plt.show()
         k=1
 
     @property
@@ -168,9 +153,7 @@ class StockData:
     @property
     def priceAtOpen(self):
         return  np.array(self.openPrice)
-        
-
-
+ 
     def getStockData(self):
         pass       
 
