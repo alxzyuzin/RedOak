@@ -10,27 +10,55 @@ LONG_TERM_MA_LENGTH = 50
 SIMBOL = "FSELX"
 UPLOADS_DIRECTORY = "uploads\\"
 
+class StockDataQuery:
+    def __init__(self, simbol):
+          
+        self.__url = 'https://query1.finance.yahoo.com/v7/finance/download/'
+        self.__periodLastDate = datetime.now()
+        self.simbol = simbol
+       
+        self.periodEnd = int((datetime.now() - datetime(1970, 1, 1, 0, 0, 0)).total_seconds()) # Number of seconds from start of epoch Jan 1, 1970 00H:00M:00S
+        self.periodStart = self.periodEnd - 31622400 # 31622400 sec. == 366 days == 1 year
+        self.interval = "1d"
+        self.events = 'history'
+        self.includeAjustedClose = True
+    
+    @property
+    def periodLastDate(self):
+        return self.__periodLastDate
+
+    @property
+    def url(self):
+        # example of query url
+        # https://query1.finance.yahoo.com/v7/finance/download/FSELX?period1=1691277249&period2=1722899649&interval=1d&events=history&includeAdjustedClose=true'
+        # period1 - the beginning of interval for retriving data
+        # period2 - the end of interval for retriving data
+        # value of parameters nubmer of seconds from 01/01/1970
+        qurl = self.__url + self.simbol
+        qurl +="?period1=" + str(self.periodStart)
+        qurl +="&period2=" + str(self.periodEnd)
+        qurl +="&interval=" + self.interval
+        qurl +="&events=" + self.events
+        qurl +="&includeAdjustedClose=" + str(self.includeAjustedClose).lower()
+        return  qurl
+    
+    @url.setter
+    def url(self, value):
+        self.__url = value
+
 class StockData:
     shortTermLength = 20
     longTermLength = 50
 
     def __init__(self):
         self.simbol = ""
-
-        # period1 - the beginning of interval for retriving data
-        # period2 - the end of interval for retriving data
-        # value of parameters nubmer of seconds from 01/01/1970
-
         self.urlstrHead = 'https://query1.finance.yahoo.com/v7/finance/download/'
                          # https://query1.finance.yahoo.com/v7/finance/download/
         self.urlstrTail = '?period1=1691277249&period2=1722899649&interval=1d&events=history&includeAdjustedClose=true'
                          # ?period1=1692325667&period2=1723948067&interval=1d&events=history&includeAdjustedClose=true
-        
                
         self.rawData = ""
-
-       
-        #FSELX
+        
         self.date       = []
         self.openPrice  = []
         self.highPrice  = []
@@ -171,21 +199,15 @@ def ticksFromZeroTime():
     return ticks
 
 def main():
-            # 1723 937 400
- #1691277249 17 228 99 649
- #1692325667 17 239 48 067
-    ts = ticksFromZeroTime()
-    s1 = ticksToDateTime(1691277249) # '2024-08-17 22:51:51'
-    e1 = ticksToDateTime(1722899649)
-    
-    s2 = ticksToDateTime(1692325667)
-    e2 = ticksToDateTime(1723948067)
 
+    stockDataQuery = StockDataQuery("FSELX")
+    url = stockDataQuery.url
+    
     sd = StockData()
     sd.loadData("FSELX")
     sd.calculateShortMA()
     sd.calculateLongMA()
     sd.displayData()
-       
+    i=1
 if __name__ == '__main__':
     main()
