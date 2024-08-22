@@ -15,7 +15,7 @@ class StockDataQuery:
           
         self.__url = 'https://query1.finance.yahoo.com/v7/finance/download/'
         self.__periodLastDate = datetime.now()
-        self.simbol = simbol
+        self.__simbol = simbol
        
         self.periodEnd = int((datetime.now() - datetime(1970, 1, 1, 0, 0, 0)).total_seconds()) # Number of seconds from start of epoch Jan 1, 1970 00H:00M:00S
         self.periodStart = self.periodEnd - 31622400 # 31622400 sec. == 366 days == 1 year
@@ -23,6 +23,11 @@ class StockDataQuery:
         self.events = 'history'
         self.includeAjustedClose = True
     
+    @property
+    def simbol(self):
+        return self.__simbol
+
+   
     @property
     def periodLastDate(self):
         return self.__periodLastDate
@@ -52,9 +57,9 @@ class StockData:
 
     def __init__(self):
         self.simbol = ""
-        self.urlstrHead = 'https://query1.finance.yahoo.com/v7/finance/download/'
+        #self.urlstrHead = 'https://query1.finance.yahoo.com/v7/finance/download/'
                          # https://query1.finance.yahoo.com/v7/finance/download/
-        self.urlstrTail = '?period1=1691277249&period2=1722899649&interval=1d&events=history&includeAdjustedClose=true'
+        #self.urlstrTail = '?period1=1691277249&period2=1722899649&interval=1d&events=history&includeAdjustedClose=true'
                          # ?period1=1692325667&period2=1723948067&interval=1d&events=history&includeAdjustedClose=true
                
         self.rawData = ""
@@ -69,19 +74,19 @@ class StockData:
         self.shortMA    = []
         self.longMA     = []
 
-    def loadData(self,smb):  
-        self.simbol = smb
-        current_dateTime = datetime.now()
-        fileName = UPLOADS_DIRECTORY + self.simbol + current_dateTime.strftime("%Y%m%d")+".txt"
+    def loadData(self,dataquery:StockDataQuery):  
+        self.simbol = dataquery.simbol
+        #current_dateTime = datetime.now()
+        fileName = UPLOADS_DIRECTORY + self.simbol + dataquery.periodLastDate.strftime("%Y%m%d")+".txt"
         
         try:
             data_file = open(fileName, "r")
             self.rawData = data_file.read()
             data_file.close()
         except:
-            urlstr = self.urlstrHead + self.simbol + self.urlstrTail
+            #urlstr = self.urlstrHead + self.simbol + self.urlstrTail
             data_file = open(fileName, "w")
-            self.rawData = urllib.request.urlopen(urlstr).read().decode()
+            self.rawData = urllib.request.urlopen(dataquery.url).read().decode()
             data_file.write(self.rawData)
             data_file.flush()
             data_file.close()
@@ -114,6 +119,17 @@ class StockData:
             self.shortMA[SHORT_TERM_MA_LENGTH + i -1] = priceTotal / SHORT_TERM_MA_LENGTH
             i+=1
         
+    def calculateShortMA(self):
+      
+        i = 0
+        while i < (len(self.date) - SHORT_TERM_MA_LENGTH + 1):
+            priceTotal = 0
+            # Sum closing prices for short term period
+            for j in range(i,SHORT_TERM_MA_LENGTH + i): 
+                priceTotal += self.closePrice[j] 
+            # Calculate average price for this period
+            self.shortMA[SHORT_TERM_MA_LENGTH + i -1] = priceTotal / SHORT_TERM_MA_LENGTH
+            i+=1
 
     def calculateLongMA(self):
       
@@ -132,9 +148,10 @@ class StockData:
                
         startvalue = LONG_TERM_MA_LENGTH
         fig, ax = plt.subplots()
+        plt.legend(loc='upper left')
 
         fig.set_size_inches(18,10) 
-        fig.suptitle('Historic prices for simbol ' + self.simbol, fontsize=16)
+        #fig.suptitle('Historic prices for simbol ' + self.simbol, fontsize=16)
       
         ax.plot(self.date[startvalue:], self.closePrice[startvalue:],
                  label = "Daily prices", color='gray', linewidth = 1)
@@ -143,8 +160,8 @@ class StockData:
         ax.plot(self.date[startvalue:], self.longMA[startvalue:],
                  label = "Long moving average")
         
-        ax.legend()
-        ax.set_title(self.simbol)
+        ax.legend(loc='upper left')
+        ax.set_title('Historic prices for simbol ' + self.simbol)
         ax.grid(True)
         
         # format the major ticks
@@ -155,21 +172,22 @@ class StockData:
         ax.xaxis.set_major_formatter(monthsFmt)
         #
         # format the minor ticks
-        days   = mdates.DayLocator()    # every day
-        #daysFmt = mdates.DateFormatter('%d')
+        days   = mdates.DayLocator(interval = 5)    # every 5 day
+        daysFmt = mdates.DateFormatter('%d')
         ax.xaxis.set_minor_locator(days)
-        #ax.xaxis.set_minor_formatter(daysFmt)
+        ax.xaxis.set_minor_formatter(daysFmt)  # Display days numbers on x axis 
 
         #ax.xaxis.set_major_formatter(
         #    ConciseDateFormatter(ax.xaxis.get_major_locator()))
 
+        ax.tick_params(axis='x', pad=15)
         datemin = self.date[startvalue]
         datemax = max(self.date)
-        ax.set_xlim(datemin, datemax)
+        ax.set_xlim(datemin)
         
         # rotates and right aligns the x labels, and moves the bottom of the
         # axes up to make room for them
-        #fig.autofmt_xdate()
+        fig.autofmt_xdate()
  
         plt.show()
         k=1
@@ -186,25 +204,15 @@ class StockData:
         pass       
 
 
-def ticksToDateTime(t):
-    converted_ticks = datetime.now() - timedelta(seconds= t)
-    return converted_ticks.strftime("%Y-%m-%d %H:%M:%S")
-
-def ticksFromZeroTime():
-    #d = datetime.datetime.strptime( "20170108233000", "%Y%m%d%H%M%S")
-    
-    d = datetime.strptime ( "20240818023000", "%Y%m%d%H%M%S")
-    t0 = datetime(1970, 1, 1, 0, 0, 0)
-    ticks = (d - t0).total_seconds()
-    return ticks
 
 def main():
-
+# FSELX
+# FSPTX
     stockDataQuery = StockDataQuery("FSELX")
     url = stockDataQuery.url
     
     sd = StockData()
-    sd.loadData("FSELX")
+    sd.loadData(stockDataQuery)
     sd.calculateShortMA()
     sd.calculateLongMA()
     sd.displayData()
