@@ -5,9 +5,6 @@ from matplotlib.dates import ConciseDateFormatter
 from datetime import datetime, timedelta
 import numpy as np
 
-SHORT_TERM_MA_LENGTH = 20
-LONG_TERM_MA_LENGTH = 50
-SIMBOL = "FSELX"
 UPLOADS_DIRECTORY = "uploads\\"
 
 class StockDataQuery:
@@ -107,46 +104,46 @@ class StockData:
             self.longMA.append(0.0)
         i=0
          
-    def calculateShortMA(self):
+    def calculateShortMA(self, periodLength):
       
         i = 0
-        while i < (len(self.date) - SHORT_TERM_MA_LENGTH + 1):
+        while i < (len(self.date) - periodLength + 1):
             priceTotal = 0
             # Sum closing prices for short term period
-            for j in range(i,SHORT_TERM_MA_LENGTH + i): 
+            for j in range(i,periodLength + i): 
                 priceTotal += self.closePrice[j] 
             # Calculate average price for this period
-            self.shortMA[SHORT_TERM_MA_LENGTH + i -1] = priceTotal / SHORT_TERM_MA_LENGTH
+            self.shortMA[periodLength + i -1] = priceTotal / periodLength
             i+=1
         
-    def calculateShortMA(self):
+    #def calculateShortMA(self):
       
-        i = 0
-        while i < (len(self.date) - SHORT_TERM_MA_LENGTH + 1):
-            priceTotal = 0
-            # Sum closing prices for short term period
-            for j in range(i,SHORT_TERM_MA_LENGTH + i): 
-                priceTotal += self.closePrice[j] 
-            # Calculate average price for this period
-            self.shortMA[SHORT_TERM_MA_LENGTH + i -1] = priceTotal / SHORT_TERM_MA_LENGTH
-            i+=1
+    #    i = 0
+    #    while i < (len(self.date) - SHORT_TERM_MA_LENGTH + 1):
+    #        priceTotal = 0
+    #        # Sum closing prices for short term period
+    #        for j in range(i,SHORT_TERM_MA_LENGTH + i): 
+    #            priceTotal += self.closePrice[j] 
+    #        # Calculate average price for this period
+    #        self.shortMA[SHORT_TERM_MA_LENGTH + i -1] = priceTotal / SHORT_TERM_MA_LENGTH
+    #        i+=1
 
-    def calculateLongMA(self):
+    def calculateLongMA(self, periodLength):
       
         i = 0
-        while i < (len(self.date) - LONG_TERM_MA_LENGTH + 1):
+        while i < (len(self.date) - periodLength + 1):
             priceTotal = 0
             # Sum closing prices for short term period
-            for j in range(i,LONG_TERM_MA_LENGTH + i): 
+            for j in range(i,periodLength + i): 
                 priceTotal += self.closePrice[j] 
             # Calculate average price for this period
-            self.longMA[LONG_TERM_MA_LENGTH + i -1] = priceTotal / LONG_TERM_MA_LENGTH
+            self.longMA[periodLength + i -1] = priceTotal / periodLength
             i+=1
         k=0
 
-    def displayData(self):
+    def displayData(self, startvalue):
                
-        startvalue = LONG_TERM_MA_LENGTH
+        
         fig, ax = plt.subplots()
         plt.legend(loc='upper left')
 
@@ -213,9 +210,9 @@ def main():
     
     sd = StockData()
     sd.loadData(stockDataQuery)
-    sd.calculateShortMA()
-    sd.calculateLongMA()
-    sd.displayData()
+    sd.calculateShortMA(10)
+    sd.calculateLongMA(30)
+    sd.displayData(30)
     i=1
 if __name__ == '__main__':
     main()
