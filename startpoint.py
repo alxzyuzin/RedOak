@@ -70,6 +70,7 @@ class StockData:
         self.volume     = [] 
         self.shortMA    = []
         self.longMA     = []
+        self.shortEMA   = []
 
     def loadData(self,dataquery:StockDataQuery):  
         self.simbol = dataquery.simbol
@@ -102,6 +103,7 @@ class StockData:
             self.volume.append(float(lineData[6]))
             self.shortMA.append(0.0)
             self.longMA.append(0.0)
+            self.shortEMA.append(0.0)
         i=0
          
     def calculateShortMA(self, periodLength):
@@ -113,20 +115,17 @@ class StockData:
             for j in range(i,periodLength + i): 
                 priceTotal += self.closePrice[j] 
             # Calculate average price for this period
-            self.shortMA[periodLength + i -1] = priceTotal / periodLength
+            self.shortMA[periodLength + i - 1] = priceTotal / periodLength
             i+=1
         
-    #def calculateShortMA(self):
+    def calculateShortEMA(self, periodLength):
       
-    #    i = 0
-    #    while i < (len(self.date) - SHORT_TERM_MA_LENGTH + 1):
-    #        priceTotal = 0
-    #        # Sum closing prices for short term period
-    #        for j in range(i,SHORT_TERM_MA_LENGTH + i): 
-    #            priceTotal += self.closePrice[j] 
-    #        # Calculate average price for this period
-    #        self.shortMA[SHORT_TERM_MA_LENGTH + i -1] = priceTotal / SHORT_TERM_MA_LENGTH
-    #        i+=1
+        multiplier = 2 / (periodLength + 1)
+        i = 1
+        while i < len(self.date):
+            self.shortEMA[i] = self.closePrice[i] * multiplier + self.shortEMA[i - 1] * (1 - multiplier)
+            i+=1
+        i=0
 
     def calculateLongMA(self, periodLength):
       
@@ -153,9 +152,11 @@ class StockData:
         ax.plot(self.date[startvalue:], self.closePrice[startvalue:],
                  label = "Daily prices", color='gray', linewidth = 1)
         ax.plot(self.date[startvalue:], self.shortMA[startvalue:],
-                 label = "Short moving average")
+                 label = "Short SMA")
         ax.plot(self.date[startvalue:], self.longMA[startvalue:],
-                 label = "Long moving average")
+                 label = "Long SMA")
+        ax.plot(self.date[startvalue:], self.shortEMA[startvalue:],
+                 label = "Short EMA")
         
         ax.legend(loc='upper left')
         ax.set_title('Historic prices for simbol ' + self.simbol)
@@ -212,6 +213,8 @@ def main():
     sd.loadData(stockDataQuery)
     sd.calculateShortMA(10)
     sd.calculateLongMA(30)
+    # Usually EMA calculates fo 12 day and 26 day period
+    sd.calculateShortEMA(10)
     sd.displayData(30)
     i=1
 if __name__ == '__main__':
