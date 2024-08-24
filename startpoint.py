@@ -71,6 +71,12 @@ class StockData:
         self.shortMA    = []
         self.longMA     = []
         self.shortEMA   = []
+        self.gain  = []
+        self.loss  = []
+        self.gainEMA  = []
+        self.lossEMA  = []
+        self.RS = []
+        self.RSI = []
 
     def loadData(self,dataquery:StockDataQuery):  
         self.simbol = dataquery.simbol
@@ -101,9 +107,18 @@ class StockData:
             self.closePrice.append(float(lineData[4]))
             self.adjClose.append(float(lineData[5]))
             self.volume.append(float(lineData[6]))
+            # Create variables for future calculation
+            # Moving average
             self.shortMA.append(0.0)
             self.longMA.append(0.0)
             self.shortEMA.append(0.0)
+            # RSI
+            self.gain.append(0.0)
+            self.loss.append(0.0)
+            self.gainEMA.append(0.0)
+            self.lossEMA.append(0.0)
+            self.RS.append(0.0)
+            self.RSI.append(0.0)
         i=0
          
     def calculateShortMA(self, periodLength):
@@ -140,53 +155,99 @@ class StockData:
             i+=1
         k=0
 
+    def calculateRSI(self, periodLength):
+      
+        # Calculate Gain and Loss
+        for i in range(1, len(self.date)):
+            change = self.openPrice[i] - self.openPrice[i-1]
+            if change > 0 :
+                self.gain[i] = change
+            else:
+                self.loss[i] = 0 - change
+        
+        # Calculate simple moving average for gain and loss
+        i = 0
+        while i < (len(self.date) - periodLength + 1):
+            # Separatly sum gains and losses for defined period
+            totalGain = 0
+            totalLoss =0
+            for j in range(i,periodLength + i): 
+                totalGain += self.gain[j] 
+                totalLoss += self.loss[j] 
+            
+            self.gainEMA[periodLength + i -1] = totalGain / periodLength
+            self.lossEMA[periodLength + i -1] = totalLoss / periodLength   
+            i+=1
+
+        # Recalculate moving average for gain and loss 
+        # into exponential moving average and calculate RSI 
+        for i in range(periodLength - 1, len(self.date)):
+        #while i  < len(self.date):
+            self.gainEMA[i] =  (self.gainEMA[i] * (periodLength - 1) + self.gain[i]) / periodLength
+            self.lossEMA[i] =  (self.lossEMA[i] * (periodLength - 1) + self.loss[i]) / periodLength
+            self.RSI[i] = 100 - 100/(1 + self.gainEMA[i] / self.lossEMA[i])
+     
+        k=0
+
+
     def displayData(self, startvalue):
                
         
-        fig, ax = plt.subplots()
+        fig, (ax0, ax1) = plt.subplots(2, 1, figsize=(5.4, 5.4), layout='constrained')
         plt.legend(loc='upper left')
 
         fig.set_size_inches(18,10) 
         #fig.suptitle('Historic prices for simbol ' + self.simbol, fontsize=16)
       
-        ax.plot(self.date[startvalue:], self.closePrice[startvalue:],
+        ax0.plot(self.date[startvalue:], self.closePrice[startvalue:],
                  label = "Daily prices", color='gray', linewidth = 1)
-        ax.plot(self.date[startvalue:], self.shortMA[startvalue:],
+        ax0.plot(self.date[startvalue:], self.shortMA[startvalue:],
                  label = "Short SMA")
-        ax.plot(self.date[startvalue:], self.longMA[startvalue:],
+        ax0.plot(self.date[startvalue:], self.longMA[startvalue:],
                  label = "Long SMA")
-        ax.plot(self.date[startvalue:], self.shortEMA[startvalue:],
+        ax0.plot(self.date[startvalue:], self.shortEMA[startvalue:],
                  label = "Short EMA")
         
-        ax.legend(loc='upper left')
-        ax.set_title('Historic prices for simbol ' + self.simbol)
-        ax.grid(True)
+        ax0.legend(loc='upper left')
+        ax0.set_title('Historic prices for simbol ' + self.simbol)
+        ax0.grid(True)
         
         # format the major ticks
         #years = mdates.YearLocator()    # every year
         months = mdates.MonthLocator()  # every month
         monthsFmt = mdates.DateFormatter('%Y-%m')
-        ax.xaxis.set_major_locator(months)
-        ax.xaxis.set_major_formatter(monthsFmt)
+        ax0.xaxis.set_major_locator(months)
+        ax0.xaxis.set_major_formatter(monthsFmt)
         #
         # format the minor ticks
         days   = mdates.DayLocator(interval = 5)    # every 5 day
         daysFmt = mdates.DateFormatter('%d')
-        ax.xaxis.set_minor_locator(days)
-        ax.xaxis.set_minor_formatter(daysFmt)  # Display days numbers on x axis 
+        ax0.xaxis.set_minor_locator(days)
+        ax0.xaxis.set_minor_formatter(daysFmt)  # Display days numbers on x axis 
 
         #ax.xaxis.set_major_formatter(
         #    ConciseDateFormatter(ax.xaxis.get_major_locator()))
 
-        ax.tick_params(axis='x', pad=15)
+        ax0.tick_params(axis='x', pad=15)
         datemin = self.date[startvalue]
         datemax = max(self.date)
-        ax.set_xlim(datemin)
+        ax0.set_xlim(datemin)
         
         # rotates and right aligns the x labels, and moves the bottom of the
         # axes up to make room for them
-        fig.autofmt_xdate()
+        #fig.autofmt_xdate()
  
+        ax1.legend(loc='upper left')
+        ax1.set_title('RSI for simbol ' + self.simbol)
+        ax1.grid(True)
+        
+        ax1.plot(self.date[startvalue:], self.RSI[startvalue:],
+                 label = "RSI", color='green', linewidth = 1)
+        ax1.set_xlim(datemin)
+        ax1.axhline( y = 70, color = 'r')
+        ax1.text(100, 60, 'Parabola $Y = x^2$', fontsize = 22)
+        ax1.axhline( y = 30, color = 'r' )
+               
         plt.show()
         k=1
 
@@ -215,6 +276,10 @@ def main():
     sd.calculateLongMA(30)
     # Usually EMA calculates fo 12 day and 26 day period
     sd.calculateShortEMA(10)
+
+    sd.calculateRSI(14)
+      
+
     sd.displayData(30)
     i=1
 if __name__ == '__main__':
