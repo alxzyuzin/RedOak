@@ -166,34 +166,54 @@ class StockData:
                 self.loss[i] = 0 - change
         
         # Calculate simple moving average for gain and loss
-        i = 0
-        while i < (len(self.date) - periodLength + 1):
+        for i in range(periodLength - 1, len(self.date)-1):
             # Separatly sum gains and losses for defined period
             totalGain = 0
             totalLoss =0
-            for j in range(i,periodLength + i): 
+            for j in range(i - periodLength +2 , i + 2): 
                 totalGain += self.gain[j] 
                 totalLoss += self.loss[j] 
             
-            self.gainEMA[periodLength + i -1] = totalGain / periodLength
-            self.lossEMA[periodLength + i -1] = totalLoss / periodLength   
-            i+=1
+            self.gainEMA[i + 1] = totalGain / periodLength
+            self.lossEMA[i + 1] = totalLoss / periodLength   
+         
 
         # Recalculate moving average for gain and loss 
         # into exponential moving average and calculate RSI 
-        for i in range(periodLength - 1, len(self.date)):
+        #oldGain = 0
+        #oldLoss = 0
+        #newGain = 0
+        #newLoss = 0
+
+        #for i in range(periodLength, len(self.date)):
         #while i  < len(self.date):
-            self.gainEMA[i] =  (self.gainEMA[i] * (periodLength - 1) + self.gain[i]) / periodLength
-            self.lossEMA[i] =  (self.lossEMA[i] * (periodLength - 1) + self.loss[i]) / periodLength
-            self.RSI[i] = 100 - 100/(1 + self.gainEMA[i] / self.lossEMA[i])
+            
+        #    oldGain = newGain
+        #    oldLoss = newLoss
+        #    newGain = (self.gainEMA[i - 1] * (periodLength - 1) + self.gain[i]) / periodLength
+        #    newLoss = (self.lossEMA[i - 1] * (periodLength - 1) + self.loss[i]) / periodLength
+            
+        #    self.gainEMA[i] =  oldGain
+        #    self.lossEMA[i] =  oldLoss
+            
+            #self.gainEMA[i] =  (self.gainEMA[i - 1] * (periodLength - 1) + self.gain[i]) / periodLength
+            #self.lossEMA[i] =  (self.lossEMA[i - 1] * (periodLength - 1) + self.loss[i]) / periodLength
+            #self.RSI[i] = 100 - 100/(1 + self.gainEMA[i] / self.lossEMA[i])
      
+        # Calculate RSI
+        for i in range(periodLength, len(self.date)):
+            self.RSI[i] = 100 - 100/(1 + self.gainEMA[i] / self.lossEMA[i])
         k=0
 
 
     def displayData(self, startvalue):
                
-        
-        fig, (ax0, ax1) = plt.subplots(2, 1, figsize=(5.4, 5.4), layout='constrained')
+        gs_kw = dict( height_ratios=[4, 1])
+        fig, (ax0, ax1) = plt.subplots(2, 1,
+                                        layout='constrained', 
+                                        gridspec_kw = gs_kw
+                                        )
+        fig.tight_layout(h_pad = 0.5, w_pad = 0) # Set figure margins size
         plt.legend(loc='upper left')
 
         fig.set_size_inches(18,10) 
@@ -211,6 +231,7 @@ class StockData:
         ax0.legend(loc='upper left')
         ax0.set_title('Historic prices for simbol ' + self.simbol)
         ax0.grid(True)
+        ax0.left = 0
         
         # format the major ticks
         #years = mdates.YearLocator()    # every year
@@ -244,9 +265,11 @@ class StockData:
         ax1.plot(self.date[startvalue:], self.RSI[startvalue:],
                  label = "RSI", color='green', linewidth = 1)
         ax1.set_xlim(datemin)
-        ax1.axhline( y = 70, color = 'r')
-        ax1.text(100, 60, 'Parabola $Y = x^2$', fontsize = 22)
-        ax1.axhline( y = 30, color = 'r' )
+        ax1.axhline( y = 70, color = 'r', linewidth=1)
+        
+        ax1.axhline( y = 30, color = 'r', linewidth=1 )
+        ax1.text(self.date[startvalue + 10],75,"Overbought level", fontsize=10, color='red')
+        ax1.text(self.date[startvalue + 10],20,"Oversold level", fontsize=10, color='red')
                
         plt.show()
         k=1
