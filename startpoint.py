@@ -4,17 +4,22 @@ import matplotlib.dates as mdates
 from matplotlib.dates import ConciseDateFormatter
 from datetime import datetime, timedelta
 import numpy as np
+import math
 
 UPLOADS_DIRECTORY = "uploads\\"
 
 class StockDataQuery:
-    def __init__(self, simbol):
+    def __init__(self, simbol, date = datetime(1970, 1, 1, 0, 0, 0) ):
           
         self.__url = 'https://query1.finance.yahoo.com/v7/finance/download/'
         self.__periodLastDate = datetime.now()
         self.__simbol = simbol
-       
-        self.periodEnd = int((datetime.now() - datetime(1970, 1, 1, 0, 0, 0)).total_seconds()) # Number of seconds from start of epoch Jan 1, 1970 00H:00M:00S
+        self.periodEnd = 0
+        if date == datetime(1970, 1, 1, 0, 0, 0):
+            self.periodEnd = int((datetime.now() - datetime(1970, 1, 1, 0, 0, 0)).total_seconds()) # Number of seconds from start of epoch Jan 1, 1970 00H:00M:00S
+        else:
+            self.periodEnd = int((date - datetime(1970, 1, 1, 0, 0, 0)).total_seconds())
+            
         self.periodStart = self.periodEnd - 31622400 # 31622400 sec. == 366 days == 1 year
         self.interval = "1d"
         self.events = 'history'
@@ -23,7 +28,6 @@ class StockDataQuery:
     @property
     def simbol(self):
         return self.__simbol
-
    
     @property
     def periodLastDate(self):
@@ -77,6 +81,8 @@ class StockData:
         self.lossEMA  = []
         self.RS = []
         self.RSI = []
+        self.upperBBRangeValue = []
+        self.lowerBBRangeValue = []
 
     def loadData(self,dataquery:StockDataQuery):  
         self.simbol = dataquery.simbol
@@ -119,6 +125,8 @@ class StockData:
             self.lossEMA.append(0.0)
             self.RS.append(0.0)
             self.RSI.append(0.0)
+            self.upperBBRangeValue.append(0.0)
+            self.lowerBBRangeValue.append(0.0)
         i=0
          
     def calculateShortMA(self, periodLength):
@@ -205,6 +213,62 @@ class StockData:
             self.RSI[i] = 100 - 100/(1 + self.gainEMA[i] / self.lossEMA[i])
         k=0
 
+    '''
+        Calculate simple average for defined range of numbers in the list
+        data - list of numbers for average calculation
+        start, and - define range in data calculation of average should be completed for
+        start - first element
+        end - last element
+    '''
+    def calcSA(self, data:list, start, end):
+        s = 0
+        if start < 0 or start > len(data) -1:
+            raise Exception("calculateSimpleAverage() - 'start' value outside data range")
+        if end < 0 or end > len(data) -1:
+            raise Exception("calculateSimpleAverage() - 'end' value outside data range")
+        
+        for i in range(start,end):
+            s+=data[i]
+        return s / (end - start)    
+
+    '''
+        Calculate standart deviation for defined range of numbers in the list
+            data - list of numbers for average calculation
+            start, and - define range in data calculation of average should be completed for
+            start - first element
+            end - last element
+        Return tuple
+            first value - standart deviation for defined perion
+            second value average for defined periob
+    '''
+    def calcSD(self, data:list, start, end):
+        avr = self.calcSA(data, start, end)
+        s = 0
+        for i in range(start,end):
+            s += (avr - data[i])**2
+        return math.sqrt(s / (end - start)), avr
+    
+    '''
+        Calculate Bollinger's band for defined period
+            data - list of numbers (dayly prices) for borders calculation
+            periodlength - define period for calculation
+            probability  - define width of band based on probability moving
+                            price out of band
+                            1 - probability = 0.15
+                            2 - pobability  = 0.02
+        Return 
+            no return
+    '''
+    def calcBB(self, periodlength, probability):
+        
+        for i in range(periodlength, len(self.closePrice)):
+            end   = i
+            start = i - periodlength
+            stddev,avr = self.calcSD(self.closePrice, start, end)
+            self.upperBBRangeValue[i] = avr + stddev * probability
+            self.lowerBBRangeValue[i] = avr - stddev * probability
+
+        return
 
     def displayData(self, startvalue):
                
@@ -227,6 +291,12 @@ class StockData:
                  label = "Long SMA")
         ax0.plot(self.date[startvalue:], self.shortEMA[startvalue:],
                  label = "Short EMA")
+        
+        # Display Bellingham borders
+        ax0.plot(self.date[startvalue:], self.upperBBRangeValue[startvalue:],
+                 label = "Upper Billingham border", color='red', linewidth = 1)
+        ax0.plot(self.date[startvalue:], self.lowerBBRangeValue[startvalue:],
+                 label = "Lower Billingham border", color='red', linewidth = 1)
         
         ax0.legend(loc='upper left')
         ax0.set_title('Historic prices for simbol ' + self.simbol)
@@ -286,15 +356,17 @@ class StockData:
         pass       
 
 
-
 def main():
 # FSELX
 # FSPTX
-    stockDataQuery = StockDataQuery("FSELX")
+   
+    stockDataQuery = StockDataQuery("FSPTX")
     url = stockDataQuery.url
     
     sd = StockData()
+    
     sd.loadData(stockDataQuery)
+    stddev=sd.calcBB(20, 1.5)
     sd.calculateShortMA(10)
     sd.calculateLongMA(30)
     # Usually EMA calculates fo 12 day and 26 day period
