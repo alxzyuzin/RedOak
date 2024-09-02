@@ -273,30 +273,26 @@ class StockData:
     def displayData(self, startvalue):
                
         gs_kw = dict( height_ratios=[4, 1])
-        fig, (ax0, ax1) = plt.subplots(2, 1,
-                                        layout='constrained', 
-                                        gridspec_kw = gs_kw
-                                        )
+        fig, (ax0, ax1) = plt.subplots(2, 1,layout='constrained', gridspec_kw = gs_kw )
         fig.tight_layout(h_pad = 0.5, w_pad = 0) # Set figure margins size
         plt.legend(loc='upper left')
 
         fig.set_size_inches(18,10) 
         #fig.suptitle('Historic prices for simbol ' + self.simbol, fontsize=16)
-      
-        ax0.plot(self.date[startvalue:], self.closePrice[startvalue:],
-                 label = "Daily prices", color='gray', linewidth = 1)
-        ax0.plot(self.date[startvalue:], self.shortMA[startvalue:],
-                 label = "Short SMA")
-        ax0.plot(self.date[startvalue:], self.longMA[startvalue:],
-                 label = "Long SMA")
-        ax0.plot(self.date[startvalue:], self.shortEMA[startvalue:],
-                 label = "Short EMA")
+        x = self.date[startvalue:]
+        # Display dayly close prices
+        ax0.plot(x, self.closePrice[startvalue:], label = "Daily prices", color='gray', linewidth = 1)
+        ax0.plot(x, self.shortMA[startvalue:],    label = "Short SMA")
+        ax0.plot(x, self.longMA[startvalue:],     label = "Long SMA")
+        ax0.plot(x, self.shortEMA[startvalue:],   label = "Short EMA")
         
         # Display Bellingham borders
-        ax0.plot(self.date[startvalue:], self.upperBBRangeValue[startvalue:],
-                 label = "Upper Billingham border", color='red', linewidth = 1)
-        ax0.plot(self.date[startvalue:], self.lowerBBRangeValue[startvalue:],
-                 label = "Lower Billingham border", color='red', linewidth = 1)
+      
+        y1 = self.upperBBRangeValue[startvalue:]
+        y2 = self.lowerBBRangeValue[startvalue:]
+        ax0.fill_between(x, y1, y2, alpha=0.2, color='green')
+        #ax0.plot(x, y1, label = "Upper Billingham border", color='red', linewidth = 1)
+        #ax0.plot(x, y2, label = "Lower Billingham border", color='red', linewidth = 1)
         
         ax0.legend(loc='upper left')
         ax0.set_title('Historic prices for simbol ' + self.simbol)
@@ -321,25 +317,34 @@ class StockData:
 
         ax0.tick_params(axis='x', pad=15)
         datemin = self.date[startvalue]
-        datemax = max(self.date)
-        ax0.set_xlim(datemin)
+        datemax = self.date[-1] + + timedelta(days=2) 
+        ax0.set_xlim(datemin, datemax)
         
         # rotates and right aligns the x labels, and moves the bottom of the
         # axes up to make room for them
         #fig.autofmt_xdate()
- 
+
+        #----------------------------------------------------------------------------------
+        # Display RSI
+        #----------------------------------------------------------------------------------
         ax1.legend(loc='upper left')
         ax1.set_title('RSI for simbol ' + self.simbol)
         ax1.grid(True)
         
         ax1.plot(self.date[startvalue:], self.RSI[startvalue:],
                  label = "RSI", color='green', linewidth = 1)
-        ax1.set_xlim(datemin)
-        ax1.axhline( y = 70, color = 'r', linewidth=1)
-        
-        ax1.axhline( y = 30, color = 'r', linewidth=1 )
-        ax1.text(self.date[startvalue + 10],75,"Overbought level", fontsize=10, color='red')
-        ax1.text(self.date[startvalue + 10],20,"Oversold level", fontsize=10, color='red')
+        ax1.set_xlim(datemin, datemax)
+        # Define coords of rectangle's corners
+        xcoords = [datemin, datemax, datemax, datemin]
+        ycoords = [70, 70, 30, 30]
+        # Draw a rectangle
+        ax1.fill(xcoords, ycoords, alpha = 0.2, color='green')
+        # Draw lines to display Overbought and Oversold Levels
+        #ax1.axhline( y = 70, color = 'r', linewidth=1)
+        #ax1.axhline( y = 30, color = 'r', linewidth=1 )
+
+        ax1.text(self.date[startvalue + 10],73,"Overbought level", fontsize=10, color='red')
+        ax1.text(self.date[startvalue + 10],23,"Oversold level", fontsize=10, color='red')
                
         plt.show()
         k=1
