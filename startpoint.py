@@ -72,8 +72,8 @@ class StockData:
         self.closePrice = []
         self.adjClose   = []
         self.volume     = [] 
-        self.shortMA    = []
-        self.longMA     = []
+        self.shortSMA    = []
+        self.longSMA     = []
         self.shortEMA   = []
         self.gain  = []
         self.loss  = []
@@ -115,8 +115,8 @@ class StockData:
             self.volume.append(float(lineData[6]))
             # Create variables for future calculation
             # Moving average
-            self.shortMA.append(0.0)
-            self.longMA.append(0.0)
+            #self.shortMA.append(0.0)
+            #self.longMA.append(0.0)
             self.shortEMA.append(0.0)
             # RSI
             self.gain.append(0.0)
@@ -125,22 +125,33 @@ class StockData:
             self.lossEMA.append(0.0)
             self.RS.append(0.0)
             self.RSI.append(0.0)
+            # Bollinger's band
             self.upperBBRangeValue.append(0.0)
             self.lowerBBRangeValue.append(0.0)
         i=0
-         
-    def calculateShortMA(self, periodLength):
+
+    '''
+        Calculate Simple Moving Average for defined range of numbers in the list
+        data - list of numbers for average calculation
+        periodLength - length of period for calculating average
+    '''     
+    def calcSMA(self, data:list, periodLength:int):
+        sma = []
+        for i in range(0, periodLength - 1):
+            sma.append(0.0)
+        for i in range(0, len(self.date) - periodLength +1):
+            #self.shortMA[i + periodLength - 1] = self.calcSA(self.closePrice, i, i + periodLength)
+            sma.append(self.calcSA(self.closePrice, i, i + periodLength))
+        return sma
+   
+
+    def calculateShortSMA(self, periodLength):
       
-        i = 0
-        while i < (len(self.date) - periodLength + 1):
-            priceTotal = 0
-            # Sum closing prices for short term period
-            for j in range(i,periodLength + i): 
-                priceTotal += self.closePrice[j] 
-            # Calculate average price for this period
-            self.shortMA[periodLength + i - 1] = priceTotal / periodLength
-            i+=1
-        
+        self.shortSMA = self.calcSMA(self.closePrice, periodLength)
+        #for i in range(0, len(self.date) - periodLength + 1):
+        #  self.shortMA[i + periodLength - 1] = self.calcSA(self.closePrice, i, i + periodLength)
+        #k=0
+    
     def calculateShortEMA(self, periodLength):
       
         multiplier = 2 / (periodLength + 1)
@@ -150,18 +161,18 @@ class StockData:
             i+=1
         i=0
 
-    def calculateLongMA(self, periodLength):
-      
-        i = 0
-        while i < (len(self.date) - periodLength + 1):
-            priceTotal = 0
+    def calculateLongSMA(self, periodLength):
+        self.longSMA = self.calcSMA(self.closePrice, periodLength)
+        #i = 0
+        #while i < (len(self.date) - periodLength + 1):
+        #    priceTotal = 0
             # Sum closing prices for short term period
-            for j in range(i,periodLength + i): 
-                priceTotal += self.closePrice[j] 
+        #    for j in range(i,periodLength + i): 
+        #        priceTotal += self.closePrice[j] 
             # Calculate average price for this period
-            self.longMA[periodLength + i -1] = priceTotal / periodLength
-            i+=1
-        k=0
+        #    self.longMA[periodLength + i -1] = priceTotal / periodLength
+        #    i+=1
+        #k=0
 
     def calculateRSI(self, periodLength):
       
@@ -222,9 +233,9 @@ class StockData:
     '''
     def calcSA(self, data:list, start, end):
         s = 0
-        if start < 0 or start > len(data) -1:
+        if start < 0 or start > len(data):
             raise Exception("calculateSimpleAverage() - 'start' value outside data range")
-        if end < 0 or end > len(data) -1:
+        if end < 0 or end > len(data):
             raise Exception("calculateSimpleAverage() - 'end' value outside data range")
         
         for i in range(start,end):
@@ -282,8 +293,8 @@ class StockData:
         x = self.date[startvalue:]
         # Display dayly close prices
         ax0.plot(x, self.closePrice[startvalue:], label = "Daily prices", color='gray', linewidth = 1)
-        ax0.plot(x, self.shortMA[startvalue:],    label = "Short SMA")
-        ax0.plot(x, self.longMA[startvalue:],     label = "Long SMA")
+        ax0.plot(x, self.shortSMA[startvalue:],    label = "Short SMA")
+        ax0.plot(x, self.longSMA[startvalue:],     label = "Long SMA")
         ax0.plot(x, self.shortEMA[startvalue:],   label = "Short EMA")
         
         # Display Bellingham borders
@@ -372,8 +383,11 @@ def main():
     
     sd.loadData(stockDataQuery)
     stddev=sd.calcBB(20, 1.5)
-    sd.calculateShortMA(10)
-    sd.calculateLongMA(30)
+    cc = sd.calcSMA(sd.closePrice,10)
+    #sd.shortMA    = sd.calcSMA(sd.closePrice,10)
+    #sd.longMA     = sd.calcSMA(sd.closePrice,30)
+    sd.calculateShortSMA(10)
+    sd.calculateLongSMA(20)
     # Usually EMA calculates fo 12 day and 26 day period
     sd.calculateShortEMA(10)
 
