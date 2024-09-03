@@ -5,6 +5,7 @@ from matplotlib.dates import ConciseDateFormatter
 from datetime import datetime, timedelta
 import numpy as np
 import math
+import statistics
 
 UPLOADS_DIRECTORY = "uploads\\"
 
@@ -54,15 +55,11 @@ class StockDataQuery:
 
 class StockData:
     shortTermLength = 20
-    longTermLength = 50
+    
 
     def __init__(self):
         self.simbol = ""
-        #self.urlstrHead = 'https://query1.finance.yahoo.com/v7/finance/download/'
-                         # https://query1.finance.yahoo.com/v7/finance/download/
-        #self.urlstrTail = '?period1=1691277249&period2=1722899649&interval=1d&events=history&includeAdjustedClose=true'
-                         # ?period1=1692325667&period2=1723948067&interval=1d&events=history&includeAdjustedClose=true
-               
+        self.plotStartPointOffset = 0
         self.rawData = ""
         
         self.date       = []
@@ -84,9 +81,11 @@ class StockData:
         self.upperBBRangeValue = []
         self.lowerBBRangeValue = []
 
+        self.MACD = []
+        self.MACDSinalLine = []
+
     def loadData(self,dataquery:StockDataQuery):  
         self.simbol = dataquery.simbol
-        #current_dateTime = datetime.now()
         fileName = UPLOADS_DIRECTORY + self.simbol + dataquery.periodLastDate.strftime("%Y%m%d")+".txt"
         
         try:
@@ -94,7 +93,6 @@ class StockData:
             self.rawData = data_file.read()
             data_file.close()
         except:
-            #urlstr = self.urlstrHead + self.simbol + self.urlstrTail
             data_file = open(fileName, "w")
             self.rawData = urllib.request.urlopen(dataquery.url).read().decode()
             data_file.write(self.rawData)
@@ -115,8 +113,6 @@ class StockData:
             self.volume.append(float(lineData[6]))
             # Create variables for future calculation
             # Moving average
-            #self.shortMA.append(0.0)
-            #self.longMA.append(0.0)
             self.shortEMA.append(0.0)
             # RSI
             self.gain.append(0.0)
@@ -128,7 +124,7 @@ class StockData:
             # Bollinger's band
             self.upperBBRangeValue.append(0.0)
             self.lowerBBRangeValue.append(0.0)
-        i=0
+ 
 
     '''
         Calculate Simple Moving Average for defined range of numbers in the list
@@ -139,18 +135,13 @@ class StockData:
         sma = []
         for i in range(0, periodLength - 1):
             sma.append(0.0)
-        for i in range(0, len(self.date) - periodLength +1):
-            #self.shortMA[i + periodLength - 1] = self.calcSA(self.closePrice, i, i + periodLength)
+        for i in range(0, len(self.date) - periodLength + 1):
             sma.append(self.calcSA(self.closePrice, i, i + periodLength))
         return sma
    
-
+    
     def calculateShortSMA(self, periodLength):
-      
         self.shortSMA = self.calcSMA(self.closePrice, periodLength)
-        #for i in range(0, len(self.date) - periodLength + 1):
-        #  self.shortMA[i + periodLength - 1] = self.calcSA(self.closePrice, i, i + periodLength)
-        #k=0
     
     def calculateShortEMA(self, periodLength):
       
@@ -160,20 +151,41 @@ class StockData:
             self.shortEMA[i] = self.closePrice[i] * multiplier + self.shortEMA[i - 1] * (1 - multiplier)
             i+=1
         i=0
+    
+    '''
+        Calculate Exponential Moving Average for defined range of numbers in the list
+        data - list of numbers for average calculation (list of close prices)
+        periodLength - length of period for calculating average
+    '''     
+    def calcEMA(self, data:list, periodLength:int):
+        multiplier = 2 / (periodLength + 1)
+        ema = []
+        for i in range(0, periodLength - 1):
+            ema.append(0.0)
+        # Calculate simple average for defined period.
+        # It'll be first value for exponential average
+        ema.append(statistics.mean(data[:periodLength]))
+        for i in range(periodLength, len(self.date)):
+            ema.append(data[i] * multiplier + ema[i - 1] * (1 - multiplier))
+        return ema
+    
+    ''' 
+        Calculate Moving Average Convergence Divergence (MACD) for defined range of numbers in the list
+        data - list of numbers for calculation
+        periodLength - length of period for calculating MACD
+    '''
+    def calculateMACD(self, shortPeriodLength, longPeriodLength):
+        shortema = self.calcEMA(self.closePrice, shortPeriodLength)
+        longema = self.calcEMA(self.closePrice, longPeriodLength)
+        self.MACD = []
+        for i in range(0, len(shortema)):
+            self.MACD.append(shortema[i] - longema[i])
+        self.MACDSinalLine = self.calcEMA(self.MACD, 9)
 
     def calculateLongSMA(self, periodLength):
+        self.plotStartPointOffset = periodLength
         self.longSMA = self.calcSMA(self.closePrice, periodLength)
-        #i = 0
-        #while i < (len(self.date) - periodLength + 1):
-        #    priceTotal = 0
-            # Sum closing prices for short term period
-        #    for j in range(i,periodLength + i): 
-        #        priceTotal += self.closePrice[j] 
-            # Calculate average price for this period
-        #    self.longMA[periodLength + i -1] = priceTotal / periodLength
-        #    i+=1
-        #k=0
-
+ 
     def calculateRSI(self, periodLength):
       
         # Calculate Gain and Loss
@@ -195,30 +207,6 @@ class StockData:
             
             self.gainEMA[i + 1] = totalGain / periodLength
             self.lossEMA[i + 1] = totalLoss / periodLength   
-         
-
-        # Recalculate moving average for gain and loss 
-        # into exponential moving average and calculate RSI 
-        #oldGain = 0
-        #oldLoss = 0
-        #newGain = 0
-        #newLoss = 0
-
-        #for i in range(periodLength, len(self.date)):
-        #while i  < len(self.date):
-            
-        #    oldGain = newGain
-        #    oldLoss = newLoss
-        #    newGain = (self.gainEMA[i - 1] * (periodLength - 1) + self.gain[i]) / periodLength
-        #    newLoss = (self.lossEMA[i - 1] * (periodLength - 1) + self.loss[i]) / periodLength
-            
-        #    self.gainEMA[i] =  oldGain
-        #    self.lossEMA[i] =  oldLoss
-            
-            #self.gainEMA[i] =  (self.gainEMA[i - 1] * (periodLength - 1) + self.gain[i]) / periodLength
-            #self.lossEMA[i] =  (self.lossEMA[i - 1] * (periodLength - 1) + self.loss[i]) / periodLength
-            #self.RSI[i] = 100 - 100/(1 + self.gainEMA[i] / self.lossEMA[i])
-     
         # Calculate RSI
         for i in range(periodLength, len(self.date)):
             self.RSI[i] = 100 - 100/(1 + self.gainEMA[i] / self.lossEMA[i])
@@ -283,22 +271,23 @@ class StockData:
 
     def displayData(self, startvalue):
                
-        gs_kw = dict( height_ratios=[4, 1])
-        fig, (ax0, ax1) = plt.subplots(2, 1,layout='constrained', gridspec_kw = gs_kw )
+        gs_kw = dict( height_ratios=[4, 1, 1])
+        # Define plot layout
+        fig, (ax0, ax1, ax2) = plt.subplots(3, 1,layout='constrained', gridspec_kw = gs_kw )
         fig.tight_layout(h_pad = 0.5, w_pad = 0) # Set figure margins size
         plt.legend(loc='upper left')
-
         fig.set_size_inches(18,10) 
         #fig.suptitle('Historic prices for simbol ' + self.simbol, fontsize=16)
+        # Create alias for X-axe values
         x = self.date[startvalue:]
-        # Display dayly close prices
+
+        # Display daily close prices and moving averages
         ax0.plot(x, self.closePrice[startvalue:], label = "Daily prices", color='gray', linewidth = 1)
-        ax0.plot(x, self.shortSMA[startvalue:],    label = "Short SMA")
-        ax0.plot(x, self.longSMA[startvalue:],     label = "Long SMA")
+        ax0.plot(x, self.shortSMA[startvalue:],   label = "Short SMA")
+        ax0.plot(x, self.longSMA[startvalue:],    label = "Long SMA")
         ax0.plot(x, self.shortEMA[startvalue:],   label = "Short EMA")
         
         # Display Bellingham borders
-      
         y1 = self.upperBBRangeValue[startvalue:]
         y2 = self.lowerBBRangeValue[startvalue:]
         ax0.fill_between(x, y1, y2, alpha=0.2, color='green')
@@ -327,8 +316,11 @@ class StockData:
         #    ConciseDateFormatter(ax.xaxis.get_major_locator()))
 
         ax0.tick_params(axis='x', pad=15)
+        
+        # Set range for displayig data
+        #datemin = min(self.date) + timedelta(days=self.plotStartPointOffset +20)
         datemin = self.date[startvalue]
-        datemax = self.date[-1] + + timedelta(days=2) 
+        datemax = self.date[-1] +  timedelta(days=2) 
         ax0.set_xlim(datemin, datemax)
         
         # rotates and right aligns the x labels, and moves the bottom of the
@@ -338,7 +330,7 @@ class StockData:
         #----------------------------------------------------------------------------------
         # Display RSI
         #----------------------------------------------------------------------------------
-        ax1.legend(loc='upper left')
+        #ax1.legend(loc='upper left')
         ax1.set_title('RSI for simbol ' + self.simbol)
         ax1.grid(True)
         
@@ -354,11 +346,23 @@ class StockData:
         #ax1.axhline( y = 70, color = 'r', linewidth=1)
         #ax1.axhline( y = 30, color = 'r', linewidth=1 )
 
-        ax1.text(self.date[startvalue + 10],73,"Overbought level", fontsize=10, color='red')
-        ax1.text(self.date[startvalue + 10],23,"Oversold level", fontsize=10, color='red')
+        ax1.text(self.date[startvalue + 10],73,"Overbought level", fontsize=10, color='gray')
+        ax1.text(self.date[startvalue + 10],23,"Oversold level", fontsize=10, color='gray')
                
+        #----------------------------------------------------------------------------------
+        # Display MACD
+        #----------------------------------------------------------------------------------       
+        
+        #ax2.legend(loc='upper left')
+        ax2.set_title('MACD for simbol ' + self.simbol)
+        ax2.grid(True)
+        
+        ax2.plot(x, self.MACD[startvalue:], label = "MACD", color='green', linewidth = 1)
+        ax2.plot(x, self.MACDSinalLine[startvalue:], label = "Signal line", color='blue', linewidth = 1)
+        ax2.set_xlim(datemin, datemax)
+        
         plt.show()
-        k=1
+       
 
     @property
     def Date(self):
@@ -383,18 +387,15 @@ def main():
     
     sd.loadData(stockDataQuery)
     stddev=sd.calcBB(20, 1.5)
-    cc = sd.calcSMA(sd.closePrice,10)
-    #sd.shortMA    = sd.calcSMA(sd.closePrice,10)
-    #sd.longMA     = sd.calcSMA(sd.closePrice,30)
-    sd.calculateShortSMA(10)
-    sd.calculateLongSMA(20)
+    sd.calculateShortSMA(20)
+    sd.calculateLongSMA(50)
     # Usually EMA calculates fo 12 day and 26 day period
     sd.calculateShortEMA(10)
-
-    sd.calculateRSI(14)
-      
-
-    sd.displayData(30)
+    aaa = sd.calcEMA(sd.closePrice,10)
+    sd.calculateRSI(20)
+    sd.calculateMACD(12,26)
+ 
+    sd.displayData(50)
     i=1
 if __name__ == '__main__':
     main()
