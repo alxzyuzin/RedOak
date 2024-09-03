@@ -165,7 +165,7 @@ class StockData:
         # Calculate simple average for defined period.
         # It'll be first value for exponential average
         ema.append(statistics.mean(data[:periodLength]))
-        for i in range(periodLength, len(self.date)):
+        for i in range(periodLength, len(data)):
             ema.append(data[i] * multiplier + ema[i - 1] * (1 - multiplier))
         return ema
     
@@ -174,13 +174,18 @@ class StockData:
         data - list of numbers for calculation
         periodLength - length of period for calculating MACD
     '''
-    def calculateMACD(self, shortPeriodLength, longPeriodLength):
+    def calculateMACD(self, shortPeriodLength = 12, longPeriodLength = 26, signalPeriodLength = 9):
         shortema = self.calcEMA(self.closePrice, shortPeriodLength)
         longema = self.calcEMA(self.closePrice, longPeriodLength)
         self.MACD = []
         for i in range(0, len(shortema)):
             self.MACD.append(shortema[i] - longema[i])
-        self.MACDSinalLine = self.calcEMA(self.MACD, 9)
+        for i in range(0, longPeriodLength - 1):
+            self.MACD[i]= 0.0
+            self.MACDSinalLine.append(0.0)
+        signallinedata = self.calcEMA(self.MACD[longPeriodLength - 1:], signalPeriodLength)
+        self.MACDSinalLine += signallinedata
+        i=1
 
     def calculateLongSMA(self, periodLength):
         self.plotStartPointOffset = periodLength
@@ -276,7 +281,7 @@ class StockData:
         fig, (ax0, ax1, ax2) = plt.subplots(3, 1,layout='constrained', gridspec_kw = gs_kw )
         fig.tight_layout(h_pad = 0.5, w_pad = 0) # Set figure margins size
         plt.legend(loc='upper left')
-        fig.set_size_inches(18,10) 
+        fig.set_size_inches(18,12) 
         #fig.suptitle('Historic prices for simbol ' + self.simbol, fontsize=16)
         # Create alias for X-axe values
         x = self.date[startvalue:]
