@@ -103,14 +103,17 @@ class StockData:
 
         for dataline in datalines[1:]:
             lineData = dataline.split(',')
-
-            self.date.append(datetime.strptime(lineData[0], '%Y-%m-%d').date())
-            self.openPrice.append(float(lineData[1]))
-            self.highPrice.append(float(lineData[2]))
-            self.lowPrice.append(float(lineData[3]))
-            self.closePrice.append(float(lineData[4]))
-            self.adjClose.append(float(lineData[5]))
-            self.volume.append(float(lineData[6]))
+            if 'null' in lineData:
+                continue
+            else:
+                self.date.append(datetime.strptime(lineData[0], '%Y-%m-%d').date())
+                self.openPrice.append(float(lineData[1]))
+                self.highPrice.append(float(lineData[2]))
+                self.lowPrice.append(float(lineData[3]))
+                self.closePrice.append(float(lineData[4]))
+                self.adjClose.append(float(lineData[5]))
+                self.volume.append(float(lineData[6]))
+            
             # Create variables for future calculation
             # Moving average
             self.shortEMA.append(0.0)
@@ -286,11 +289,16 @@ class StockData:
         # Create alias for X-axe values
         x = self.date[startvalue:]
 
+        
+       
+        ax0.set_title('Historic prices for simbol ' + self.simbol)
+        ax0.grid(True)
+        ax0.left = 0
         # Display daily close prices and moving averages
         ax0.plot(x, self.closePrice[startvalue:], label = "Daily prices", color='gray', linewidth = 1)
-        ax0.plot(x, self.shortSMA[startvalue:],   label = "Short SMA")
-        ax0.plot(x, self.longSMA[startvalue:],    label = "Long SMA")
-        ax0.plot(x, self.shortEMA[startvalue:],   label = "Short EMA")
+        #ax0.plot(x, self.shortSMA[startvalue:],   label = "Short SMA")
+        ax0.plot(x, self.longSMA[startvalue:],    label = "Long SMA", color = 'orange')
+        ax0.plot(x, self.shortEMA[startvalue:],   label = "Short EMA", color = 'green')
         
         # Display Bellingham borders
         y1 = self.upperBBRangeValue[startvalue:]
@@ -298,11 +306,8 @@ class StockData:
         ax0.fill_between(x, y1, y2, alpha=0.2, color='green')
         #ax0.plot(x, y1, label = "Upper Billingham border", color='red', linewidth = 1)
         #ax0.plot(x, y2, label = "Lower Billingham border", color='red', linewidth = 1)
-        
         ax0.legend(loc='upper left')
-        ax0.set_title('Historic prices for simbol ' + self.simbol)
-        ax0.grid(True)
-        ax0.left = 0
+       
         
         # format the major ticks
         #years = mdates.YearLocator()    # every year
@@ -335,7 +340,7 @@ class StockData:
         #----------------------------------------------------------------------------------
         # Display RSI
         #----------------------------------------------------------------------------------
-        #ax1.legend(loc='upper left')
+        
         ax1.set_title('RSI for simbol ' + self.simbol)
         ax1.grid(True)
         
@@ -353,18 +358,19 @@ class StockData:
 
         ax1.text(self.date[startvalue + 10],73,"Overbought level", fontsize=10, color='gray')
         ax1.text(self.date[startvalue + 10],23,"Oversold level", fontsize=10, color='gray')
-               
+        ax1.legend(loc='upper left')    
         #----------------------------------------------------------------------------------
         # Display MACD
         #----------------------------------------------------------------------------------       
         
-        #ax2.legend(loc='upper left')
+        
         ax2.set_title('MACD for simbol ' + self.simbol)
         ax2.grid(True)
         
         ax2.plot(x, self.MACD[startvalue:], label = "MACD", color='green', linewidth = 1)
         ax2.plot(x, self.MACDSinalLine[startvalue:], label = "Signal line", color='blue', linewidth = 1)
         ax2.set_xlim(datemin, datemax)
+        ax2.legend(loc='upper left')
         
         plt.show()
        
@@ -385,7 +391,7 @@ def main():
 # FSELX
 # FSPTX
    
-    stockDataQuery = StockDataQuery("FSPTX")
+    stockDataQuery = StockDataQuery("FSELX")
     url = stockDataQuery.url
     
     sd = StockData()
