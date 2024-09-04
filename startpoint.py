@@ -139,7 +139,7 @@ class StockData:
         for i in range(0, periodLength - 1):
             sma.append(0.0)
         for i in range(0, len(self.date) - periodLength + 1):
-            sma.append(self.calcSA(self.closePrice, i, i + periodLength))
+            sma.append(statistics.fmean(self.closePrice[i:i+periodLength]))
         return sma
    
     
@@ -167,7 +167,7 @@ class StockData:
             ema.append(0.0)
         # Calculate simple average for defined period.
         # It'll be first value for exponential average
-        ema.append(statistics.mean(data[:periodLength]))
+        ema.append(statistics.fmean(data[:periodLength]))
         for i in range(periodLength, len(data)):
             ema.append(data[i] * multiplier + ema[i - 1] * (1 - multiplier))
         return ema
@@ -183,12 +183,13 @@ class StockData:
         self.MACD = []
         for i in range(0, len(shortema)):
             self.MACD.append(shortema[i] - longema[i])
+        # Fill items in MACD list with 0.0 for items laying before meaningfull macd values
         for i in range(0, longPeriodLength - 1):
             self.MACD[i]= 0.0
             self.MACDSinalLine.append(0.0)
         signallinedata = self.calcEMA(self.MACD[longPeriodLength - 1:], signalPeriodLength)
         self.MACDSinalLine += signallinedata
-        i=1
+        
 
     def calculateLongSMA(self, periodLength):
         self.plotStartPointOffset = periodLength
@@ -220,25 +221,7 @@ class StockData:
             self.RSI[i] = 100 - 100/(1 + self.gainEMA[i] / self.lossEMA[i])
         k=0
 
-    '''
-        Calculate simple average for defined range of numbers in the list
-        data - list of numbers for average calculation
-        start, and - define range in data calculation of average should be completed for
-        start - first element
-        end - last element
-    '''
-    def calcSA(self, data:list, start, end):
-        s = 0
-        if start < 0 or start > len(data):
-            raise Exception("calculateSimpleAverage() - 'start' value outside data range")
-        if end < 0 or end > len(data):
-            raise Exception("calculateSimpleAverage() - 'end' value outside data range")
-        
-        for i in range(start,end):
-            s+=data[i]
-        return s / (end - start)    
-
-    '''
+        '''
         Calculate standart deviation for defined range of numbers in the list
             data - list of numbers for average calculation
             start, and - define range in data calculation of average should be completed for
@@ -249,7 +232,8 @@ class StockData:
             second value average for defined periob
     '''
     def calcSD(self, data:list, start, end):
-        avr = self.calcSA(data, start, end)
+        
+        avr = statistics.fmean(self.closePrice[start:end])
         s = 0
         for i in range(start,end):
             s += (avr - data[i])**2
