@@ -196,7 +196,6 @@ class StockData:
         self.longSMA = self.calcSMA(self.closePrice, periodLength)
  
     def calculateRSI(self, periodLength):
-      
         # Calculate Gain and Loss
         for i in range(1, len(self.date)):
             change = self.openPrice[i] - self.openPrice[i-1]
@@ -219,26 +218,9 @@ class StockData:
         # Calculate RSI
         for i in range(periodLength, len(self.date)):
             self.RSI[i] = 100 - 100/(1 + self.gainEMA[i] / self.lossEMA[i])
-        k=0
 
-        '''
-        Calculate standart deviation for defined range of numbers in the list
-            data - list of numbers for average calculation
-            start, and - define range in data calculation of average should be completed for
-            start - first element
-            end - last element
-        Return tuple
-            first value - standart deviation for defined perion
-            second value average for defined periob
-    '''
-    def calcSD(self, data:list, start, end):
+
         
-        avr = statistics.fmean(self.closePrice[start:end])
-        s = 0
-        for i in range(start,end):
-            s += (avr - data[i])**2
-        return math.sqrt(s / (end - start)), avr
-    
     '''
         Calculate Bollinger's band for defined period
             data - list of numbers (dayly prices) for borders calculation
@@ -250,15 +232,13 @@ class StockData:
         Return 
             no return
     '''
-    def calcBB(self, periodlength, probability):
+    def calcBollingerBand(self, periodlength, probability):
         
         for i in range(periodlength, len(self.closePrice)):
-            end   = i
-            start = i - periodlength
-            stddev,avr = self.calcSD(self.closePrice, start, end)
+            stddev = statistics.pstdev(self.closePrice[i - periodlength : i]) 
+            avr = statistics.fmean(self.closePrice[i - periodlength: i])
             self.upperBBRangeValue[i] = avr + stddev * probability
             self.lowerBBRangeValue[i] = avr - stddev * probability
-
         return
 
     def displayData(self, startvalue):
@@ -381,7 +361,7 @@ def main():
     sd = StockData()
     
     sd.loadData(stockDataQuery)
-    stddev=sd.calcBB(20, 1.5)
+    sd.calcBollingerBand(20, 1.5)
     sd.calculateShortSMA(20)
     sd.calculateLongSMA(50)
     # Usually EMA calculates fo 12 day and 26 day period
