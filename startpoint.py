@@ -72,11 +72,6 @@ class StockData:
         self.shortSMA    = []
         self.longSMA     = []
         self.shortEMA   = []
-        self.gain  = []
-        self.loss  = []
-        self.gainEMA  = []
-        self.lossEMA  = []
-        self.RS = []
         self.RSI = []
         self.upperBBRangeValue = []
         self.lowerBBRangeValue = []
@@ -118,11 +113,6 @@ class StockData:
             # Moving average
             self.shortEMA.append(0.0)
             # RSI
-            self.gain.append(0.0)
-            self.loss.append(0.0)
-            self.gainEMA.append(0.0)
-            self.lossEMA.append(0.0)
-            self.RS.append(0.0)
             self.RSI.append(0.0)
             # Bollinger's band
             self.upperBBRangeValue.append(0.0)
@@ -139,7 +129,8 @@ class StockData:
         for i in range(0, periodLength - 1):
             sma.append(0.0)
         for i in range(0, len(self.date) - periodLength + 1):
-            sma.append(statistics.fmean(self.closePrice[i:i+periodLength]))
+            #sma.append(statistics.fmean(self.closePrice[i:i+periodLength]))
+            sma.append(statistics.fmean(data[i:i+periodLength]))
         return sma
    
     
@@ -192,34 +183,28 @@ class StockData:
         
 
     def calculateLongSMA(self, periodLength):
-        self.plotStartPointOffset = periodLength
+        #self.plotStartPointOffset = periodLength
         self.longSMA = self.calcSMA(self.closePrice, periodLength)
  
     def calculateRSI(self, periodLength):
         # Calculate Gain and Loss
+        gain = [0.0]
+        loss = [0.0]
         for i in range(1, len(self.date)):
             change = self.openPrice[i] - self.openPrice[i-1]
             if change > 0 :
-                self.gain[i] = change
+                gain.append(change)
+                loss.append(0.0)
             else:
-                self.loss[i] = 0 - change
+                gain.append(0)
+                loss.append(0 - change)
         
-        # Calculate simple moving average for gain and loss
-        for i in range(periodLength - 1, len(self.date)-1):
-            # Separatly sum gains and losses for defined period
-            totalGain = 0
-            totalLoss =0
-            for j in range(i - periodLength +2 , i + 2): 
-                totalGain += self.gain[j] 
-                totalLoss += self.loss[j] 
-            
-            self.gainEMA[i + 1] = totalGain / periodLength
-            self.lossEMA[i + 1] = totalLoss / periodLength   
-        # Calculate RSI
+        gainEMA = self.calcSMA(gain, periodLength)
+        lossEMA = self.calcSMA(loss, periodLength)
+          # Calculate RSI
         for i in range(periodLength, len(self.date)):
-            self.RSI[i] = 100 - 100/(1 + self.gainEMA[i] / self.lossEMA[i])
-
-
+            self.RSI[i] = 100 - 100/(1 + gainEMA[i] / lossEMA[i])
+  
         
     '''
         Calculate Bollinger's band for defined period
