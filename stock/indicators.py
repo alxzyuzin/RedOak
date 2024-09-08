@@ -36,9 +36,10 @@ class ChartsData:
         self.__changeOverTime = []
         
         # Calculated indicators
-        self.shortSMA    = []
-        self.longSMA     = []
-        self.shortEMA   = []
+        self.__shortSMA    = []
+        self.__longSMA     = []
+        self.__shortEMA   = []
+        
         self.RSI = []
         self.upperBBRangeValue = []
         self.lowerBBRangeValue = []
@@ -48,7 +49,9 @@ class ChartsData:
 
 
     def load(self):
-        url = self.__url + self.__simbol+"?from=" + self.__from +"&to=" + self.__to + "&apikey=" + self.__apikey# + "&serietype=" + self.__serietype
+        #url = self.__url + self.__simbol+"?from=" + self.__from +"&to=" + self.__to + "&apikey=" + self.__apikey# + "&serietype=" + self.__serietype
+        #test url with constant range for tests
+        url = 'https://financialmodelingprep.com/api/v3/historical-price-full/FSELX?from=2024-01-01&to=2024-09-07&apikey=VmvqJNpPV26D4SP554R2BkjnrCuJsJ2m'
         sourceData = []
         try:
             response = urlopen(url, cafile=certifi.where())
@@ -57,23 +60,69 @@ class ChartsData:
         except  Exception as msg:
             print(msg)
         
+        #data_file = open("uploads\\testData.csv", "w")
+       
+
         for datastr in reversed(sourceData["historical"]):
             self.__date.append(datetime.strptime(datastr["date"], '%Y-%m-%d').date())
-            self.__openPrice.append(datastr["open"])
-            self.__highPrice.append(datastr["high"])
-            self.__lowPrice.append(datastr["low"])
-            self.__closePrice.append(datastr["close"])
-            self.__adjClose.append(datastr["adjClose"])
-            self.__volume.append(datastr["volume"])
-            self.__unadjustedVolume.append(datastr["unadjustedVolume"])
-            self.__change.append(datastr["change"])
-            self.__changePercent.append(datastr["changePercent"])
-            self.__vwap.append(datastr["vwap"])
+            self.__openPrice.append(float(datastr["open"]))
+            self.__highPrice.append(float(datastr["high"]))
+            self.__lowPrice.append(float(datastr["low"]))
+            self.__closePrice.append(float(datastr["close"]))
+            self.__adjClose.append(float(datastr["adjClose"]))
+            self.__volume.append(float(datastr["volume"]))
+            self.__unadjustedVolume.append(float(datastr["unadjustedVolume"]))
+            self.__change.append(float(datastr["change"]))
+            self.__changePercent.append(float(datastr["changePercent"]))
+            self.__vwap.append(float(datastr["vwap"]))
             self.__label.append(datastr["label"])
-            self.__changeOverTime.append(datastr["changeOverTime"])
-        i=0
+            self.__changeOverTime.append(float(datastr["changeOverTime"]))
             
-       
+            strl = str(datastr["date"])
+            strl += ("," + str(datastr["close"]))
+            strl += "\n"
+            #data_file.writelines(strl)
+            
+            
+            self.__longSMA.append(0.0)
+         
+        #data_file.flush()
+        #data_file.close()
+
+    '''
+        Calculate Simple Moving Average for defined range of numbers in the list
+        data - list of numbers for average calculation
+        periodLength - length of period for calculating average
+    '''     
+    def calcSMA(self, data:list, periodLength:int):
+        sma = []
+        for i in range(0, periodLength - 1):
+            sma.append(0.0)
+        for i in range(0, len(self.__date) - periodLength + 1):
+            sma.append(statistics.fmean(data[i:i+periodLength]))
+        return sma
+   
+    
+    def calcShortSMA(self, periodLength):
+        self.__shortSMA = self.calcSMA(self.__closePrice, periodLength)        
+
+    def calcLongSMA(self, periodLength):
+        self.__longSMA = self.calcSMA(self.__closePrice, periodLength)
+    
+    def calcShortEMA_(self, periodLength):
+        multiplier = 2 / (periodLength + 1)
+        i = 1
+        while i < len(self.__date):
+            self.__shortEMA[i] = self.__closePrice[i] * multiplier + self.__shortEMA[i - 1] * (1 - multiplier)
+            i+=1
+
+    def calcShortEMA(self, periodLength):
+        multiplier = 2 / (periodLength + 1)
+        self.__shortEMA.append(0.0)
+        for i in range(1, len(self.__date)):
+            self.__shortEMA.append(self.__closePrice[i] * multiplier + self.__shortEMA[i - 1] * (1 - multiplier))
+           
+
     def show(self, startvalue):
                
         gs_kw = dict( height_ratios=[4, 1, 1])
@@ -91,9 +140,9 @@ class ChartsData:
         ax0.left = 0
         # Display daily close prices and moving averages
         ax0.plot(x, self.__closePrice[startvalue:], label = "Daily prices", color='gray', linewidth = 1)
-        #ax0.plot(x, self.shortSMA[startvalue:],   label = "Short SMA")
-        #//////ax0.plot(x, self.longSMA[startvalue:],    label = "Long SMA", color = 'orange')
-        #//////ax0.plot(x, self.shortEMA[startvalue:],   label = "Short EMA", color = 'green')
+        ax0.plot(x, self.__shortSMA[startvalue:],   label = "Short SMA")
+        ax0.plot(x, self.__longSMA[startvalue:],    label = "Long SMA", color = 'orange')
+        ax0.plot(x, self.__shortEMA[startvalue:],   label = "Short EMA", color = 'green')
         
         # Display Bellingham borders
         #y1 = self.upperBBRangeValue[startvalue:]
