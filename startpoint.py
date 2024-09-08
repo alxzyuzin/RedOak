@@ -7,6 +7,8 @@ import numpy as np
 import math
 import statistics
 
+Alpha_Vantage_API_key = "YL1RVJMHMIS3VX2R"
+
 UPLOADS_DIRECTORY = "uploads\\"
 
 class StockDataQuery:
