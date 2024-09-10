@@ -4,10 +4,7 @@ import certifi
 import json
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-#import numpy as np
-import math
 import statistics
-
 
 class ChartsData:
 
@@ -38,20 +35,23 @@ class ChartsData:
         # Calculated indicators
         self.__shortSMA    = []
         self.__longSMA     = []
+        self.__longSMALength = 0
         self.__shortEMA   = []
+        self.__shortMALength = 0
         
         self.RSI = []
-        self.upperBBRangeValue = []
-        self.lowerBBRangeValue = []
+        self.__upperBBRangeValue = []
+        self.__lowerBBRangeValue = []
+        self.__BBstddevKoeff = 2
 
         self.MACD = []
         self.MACDSinalLine = []
 
 
     def load(self):
-        #url = self.__url + self.__simbol+"?from=" + self.__from +"&to=" + self.__to + "&apikey=" + self.__apikey# + "&serietype=" + self.__serietype
+        url = self.__url + self.__simbol+"?from=" + self.__from +"&to=" + self.__to + "&apikey=" + self.__apikey# + "&serietype=" + self.__serietype
         #test url with constant range for tests
-        url = 'https://financialmodelingprep.com/api/v3/historical-price-full/FSELX?from=2024-01-01&to=2024-09-07&apikey=VmvqJNpPV26D4SP554R2BkjnrCuJsJ2m'
+        #url = 'https://financialmodelingprep.com/api/v3/historical-price-full/FSELX?from=2024-01-01&to=2024-09-07&apikey=VmvqJNpPV26D4SP554R2BkjnrCuJsJ2m'
         sourceData = []
         try:
             response = urlopen(url, cafile=certifi.where())
@@ -107,21 +107,67 @@ class ChartsData:
         self.__shortSMA = self.calcSMA(self.__closePrice, periodLength)        
 
     def calcLongSMA(self, periodLength):
+        self.__longSMALength = periodLength
         self.__longSMA = self.calcSMA(self.__closePrice, periodLength)
     
-    def calcShortEMA_(self, periodLength):
-        multiplier = 2 / (periodLength + 1)
-        i = 1
-        while i < len(self.__date):
-            self.__shortEMA[i] = self.__closePrice[i] * multiplier + self.__shortEMA[i - 1] * (1 - multiplier)
-            i+=1
-
     def calcShortEMA(self, periodLength):
         multiplier = 2 / (periodLength + 1)
         self.__shortEMA.append(0.0)
         for i in range(1, len(self.__date)):
             self.__shortEMA.append(self.__closePrice[i] * multiplier + self.__shortEMA[i - 1] * (1 - multiplier))
            
+    '''
+        Calculate Bollinger's band for defined period
+            Band's width calculated based on probability that price lay
+            inside calculated band.
+            Standard calculation method calculate band width as +- 2*stddev
+            from average (in this case probability = 0.95)
+            data - list of numbers (dayly prices) for borders calculation
+            periodlength - define period for calculation
+            probability  - probability that price are inside drawed band                            price out of band
+        Return 
+            no return
+    '''
+    def calcBollingerBand(self, periodlength, probability):
+        for i in range(0, periodlength):
+            self.__upperBBRangeValue.append(0.0)
+            self.__lowerBBRangeValue.append(0.0)
+ 
+        for i in range(periodlength, len(self.__closePrice)):
+            sample_data = self.__closePrice[i - periodlength : i]
+            #sample_data = [15,15,15,15,14,17,18,21,22,24,26,29,29,30,25]
+            # Calculate standard deviation
+            stddev = statistics.pstdev(sample_data) 
+            avr = statistics.fmean(sample_data)
+            #-----------------------------------------------------------
+            #  Confidence interval calculation
+            # Calculate standard error as  stddev / np.sqrt(len(sample_data) - 1)
+            #stderr = stats.sem(sample_data)
+            #ster = stddev/math.sqrt(len(sample_data)-1)
+            # Calculate Z-value for defined confidence level
+            #z_value = stats.norm.ppf((1 - confidence_level) / 2)
+            # Calculate предел погрешности
+            #err_limit = z_value * stderr
+            # Calculate the confidence interval
+            #confidence_interval = stats.t.interval(confidence_level,df = len(sample_data)-1, loc = avr, scale=stderr)
+            # 68-95-99.7
+            # (1 - 0.68)/2 = 0.16
+            # 0.68 + 0.16 = 0.84 = 1 - 0.16
+            normDist = statistics.NormalDist(mu = avr, sigma = stddev)
+            lt = (1 - probability) / 2
+            rt = (1 - lt)
+            # Calculate border level for left tail of normal distribution plot
+            lowerLimit = normDist.inv_cdf(lt)
+            # Calculate border level for right tail of normal distribution plot
+            upperLimit = normDist.inv_cdf(rt)
+            #up = avr - err_limit
+            #lw = avr + err_limit
+            #ci = avr +  stddev * 2
+            self.__upperBBRangeValue.append(upperLimit)
+            self.__lowerBBRangeValue.append(lowerLimit)
+            #self.upperBBRangeValue[i] = avr + stddev * probability
+            #self.lowerBBRangeValue[i] = avr - stddev * probability
+        return
 
     def show(self, startvalue):
                
@@ -140,14 +186,14 @@ class ChartsData:
         ax0.left = 0
         # Display daily close prices and moving averages
         ax0.plot(x, self.__closePrice[startvalue:], label = "Daily prices", color='gray', linewidth = 1)
-        ax0.plot(x, self.__shortSMA[startvalue:],   label = "Short SMA")
+        #ax0.plot(x, self.__shortSMA[startvalue:],   label = "Short SMA")
         ax0.plot(x, self.__longSMA[startvalue:],    label = "Long SMA", color = 'orange')
         ax0.plot(x, self.__shortEMA[startvalue:],   label = "Short EMA", color = 'green')
         
         # Display Bellingham borders
-        #y1 = self.upperBBRangeValue[startvalue:]
-        #y2 = self.lowerBBRangeValue[startvalue:]
-        #ax0.fill_between(x, y1, y2, alpha=0.2, color='green')
+        y1 = self.__upperBBRangeValue[startvalue:]
+        y2 = self.__lowerBBRangeValue[startvalue:]
+        ax0.fill_between(x, y1, y2, alpha=0.2, color='green')
         #ax0.plot(x, y1, label = "Upper Billingham border", color='red', linewidth = 1)
         #ax0.plot(x, y2, label = "Lower Billingham border", color='red', linewidth = 1)
         ax0.legend(loc='upper left')
