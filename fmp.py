@@ -7,6 +7,7 @@ def main():
     # Usually EMA calculates fo 12 day and 26 day period
     stockData.calcShortEMA(10)
     stockData.calcBollingerBand(20, 0.95)
+    stockData.calcRSI(20)
     stockData.show(50)
 
     i=1

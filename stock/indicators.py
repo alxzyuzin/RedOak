@@ -39,10 +39,10 @@ class ChartsData:
         self.__shortEMA   = []
         self.__shortMALength = 0
         
-        self.RSI = []
+        self.__RSI = []
         self.__upperBBRangeValue = []
         self.__lowerBBRangeValue = []
-        self.__BBstddevKoeff = 2
+        #self.__BBstddevKoeff = 2
 
         self.MACD = []
         self.MACDSinalLine = []
@@ -83,8 +83,7 @@ class ChartsData:
             strl += "\n"
             #data_file.writelines(strl)
             
-            
-            self.__longSMA.append(0.0)
+            #self.__longSMA.append(0.0)
          
         #data_file.flush()
         #data_file.close()
@@ -169,6 +168,31 @@ class ChartsData:
             #self.lowerBBRangeValue[i] = avr - stddev * probability
         return
 
+    def calcRSI(self, periodLength):
+        # Calculate Gain and Loss
+        gain = [0.0]
+        loss = [0.0]
+        for i in range(1, len(self.__date)):
+            change = self.__openPrice[i] - self.__openPrice[i-1]
+            if change > 0 :
+                gain.append(change)
+                loss.append(0.0)
+            else:
+                gain.append(0)
+                loss.append(0 - change)
+        
+        gainEMA = self.calcSMA(gain, periodLength)
+        lossEMA = self.calcSMA(loss, periodLength)
+        # Calculate RSI
+        self.__RSI = []
+        for i in range(0, periodLength):
+            self.__RSI.append(0.0)
+        for i in range(periodLength, len(self.__date)):
+            # Приводим значение к диапазону 0 - 100
+            #self.__RSI.append(100 - 100/(1 + gainEMA[i] / lossEMA[i]))
+             # Приводим значение к диапазону -50 +50
+            self.__RSI.append(50 - 100/(1 + gainEMA[i] / lossEMA[i]))
+    
     def show(self, startvalue):
                
         gs_kw = dict( height_ratios=[4, 1, 1])
@@ -231,24 +255,25 @@ class ChartsData:
         # Display RSI
         #----------------------------------------------------------------------------------
         
-        #ax1.set_title('RSI for simbol ' + self.simbol)
-        #ax1.grid(True)
+        ax1.set_title('RSI for simbol ' + self.__simbol)
+        ax1.grid(True)
         
-        #ax1.plot(self.__date[startvalue:], self.RSI[startvalue:],
-        #         label = "RSI", color='green', linewidth = 1)
-        #ax1.set_xlim(datemin, datemax)
+        ax1.plot(self.__date[startvalue:], self.__RSI[startvalue:],
+                 label = "RSI", color='steelblue', linewidth = 1)
+        ax1.set_xlim(datemin, datemax)
+        ax1.set_ylim(-40, 40)
         # Define coords of rectangle's corners
-        #xcoords = [datemin, datemax, datemax, datemin]
-        #ycoords = [70, 70, 30, 30]
+        xcoords = [datemin, datemax, datemax, datemin]
+        ycoords = [20, 20, -20, -20]
         # Draw a rectangle
-        #ax1.fill(xcoords, ycoords, alpha = 0.2, color='green')
+        ax1.fill(xcoords, ycoords, alpha = 0.4, color='lightsteelblue')
         # Draw lines to display Overbought and Oversold Levels
         #ax1.axhline( y = 70, color = 'r', linewidth=1)
         #ax1.axhline( y = 30, color = 'r', linewidth=1 )
 
-        #ax1.text(self.__date[startvalue + 10],73,"Overbought level", fontsize=10, color='gray')
-        #ax1.text(self.__date[startvalue + 10],23,"Oversold level", fontsize=10, color='gray')
-        #ax1.legend(loc='upper left')    
+        ax1.text(self.__date[startvalue + 10],23,"Overbought level", fontsize=10, color='gray')
+        ax1.text(self.__date[startvalue + 10],-30,"Oversold level", fontsize=10, color='gray')
+        ax1.legend(loc='lower left')    
         #----------------------------------------------------------------------------------
         # Display MACD
         #----------------------------------------------------------------------------------       
@@ -262,6 +287,11 @@ class ChartsData:
         #ax2.set_xlim(datemin, datemax)
         #ax2.legend(loc='upper left')
         
+        # Open full screen window
+        mng = plt.get_current_fig_manager()
+        mng.set_window_title("Indicators for simbol " + self.__simbol)
+        #mng.full_screen_toggle()
+
         plt.show()
        
     

@@ -205,8 +205,10 @@ class StockData:
         lossEMA = self.calcSMA(loss, periodLength)
           # Calculate RSI
         for i in range(periodLength, len(self.date)):
-            self.RSI[i] = 100 - 100/(1 + gainEMA[i] / lossEMA[i])
-  
+            # Приводим значение к диапазону 0 - 100
+            #self.RSI[i] = 100 - 100/(1 + gainEMA[i] / lossEMA[i])
+            # Приводим значение к диапазону -50 +50
+            self.RSI[i] = 50 - 100/(1 + gainEMA[i] / lossEMA[i])
         
     '''
         Calculate Bollinger's band for defined period
