@@ -8,6 +8,7 @@ def main():
     stockData.calcShortEMA(10)
     stockData.calcBollingerBand(20, 0.95)
     stockData.calcRSI(20)
+    stockData.calcMACD(shortPeriodLength = 12, longPeriodLength = 26, signalPeriodLength = 9)
     stockData.show(50)
 
     i=1

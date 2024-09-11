@@ -44,8 +44,8 @@ class ChartsData:
         self.__lowerBBRangeValue = []
         #self.__BBstddevKoeff = 2
 
-        self.MACD = []
-        self.MACDSinalLine = []
+        self.__MACD = []
+        self.__MACDSinalLine = []
 
 
     def load(self):
@@ -78,9 +78,9 @@ class ChartsData:
             self.__label.append(datastr["label"])
             self.__changeOverTime.append(float(datastr["changeOverTime"]))
             
-            strl = str(datastr["date"])
-            strl += ("," + str(datastr["close"]))
-            strl += "\n"
+            #strl = str(datastr["date"])
+            #strl += ("," + str(datastr["close"]))
+            #strl += "\n"
             #data_file.writelines(strl)
             
             #self.__longSMA.append(0.0)
@@ -193,6 +193,42 @@ class ChartsData:
              # Приводим значение к диапазону -50 +50
             self.__RSI.append(50 - 100/(1 + gainEMA[i] / lossEMA[i]))
     
+    '''
+        Calculate Exponential Moving Average for defined range of numbers in the list
+        data - list of numbers for average calculation (list of close prices)
+        periodLength - length of period for calculating average
+    '''     
+    def calcEMA(self, data:list, periodLength:int):
+        multiplier = 2 / (periodLength + 1)
+        ema = []
+        for i in range(0, periodLength - 1):
+            ema.append(0.0)
+        # Calculate simple average for defined period.
+        # It'll be first value for exponential average
+        ema.append(statistics.fmean(data[:periodLength]))
+        for i in range(periodLength, len(data)):
+            ema.append(data[i] * multiplier + ema[i - 1] * (1 - multiplier))
+        return ema
+
+    ''' 
+        Calculate Moving Average Convergence Divergence (MACD) for defined range of numbers in the list
+        data - list of numbers for calculation
+        periodLength - length of period for calculating MACD
+    '''
+    def calcMACD(self, shortPeriodLength = 12, longPeriodLength = 26, signalPeriodLength = 9):
+        shortema = self.calcEMA(self.__closePrice, shortPeriodLength)
+        longema = self.calcEMA(self.__closePrice, longPeriodLength)
+        self.__MACD = []
+        self.__MACDSinalLine = []
+        for i in range(0, len(shortema)):
+            self.__MACD.append(shortema[i] - longema[i])
+        # Fill items in MACD list with 0.0 for items laying before meaningfull macd values
+        for i in range(0, longPeriodLength - 1):
+            self.__MACD[i]= 0.0
+            self.__MACDSinalLine.append(0.0)
+        signalLineData = self.calcEMA(self.__MACD[longPeriodLength - 1:], signalPeriodLength)
+        self.__MACDSinalLine += signalLineData
+
     def show(self, startvalue):
                
         gs_kw = dict( height_ratios=[4, 1, 1])
@@ -279,13 +315,13 @@ class ChartsData:
         #----------------------------------------------------------------------------------       
         
         
-        #ax2.set_title('MACD for simbol ' + self.__simbol)
-        #ax2.grid(True)
+        ax2.set_title('MACD for simbol ' + self.__simbol)
+        ax2.grid(True)
         
-        #ax2.plot(x, self.MACD[startvalue:], label = "MACD", color='green', linewidth = 1)
-        #ax2.plot(x, self.MACDSinalLine[startvalue:], label = "Signal line", color='blue', linewidth = 1)
-        #ax2.set_xlim(datemin, datemax)
-        #ax2.legend(loc='upper left')
+        ax2.plot(x, self.__MACD[startvalue:], label = "MACD", color='green', linewidth = 1)
+        ax2.plot(x, self.__MACDSinalLine[startvalue:], label = "Signal line", color='blue', linewidth = 1)
+        ax2.set_xlim(datemin, datemax)
+        ax2.legend(loc='upper left')
         
         # Open full screen window
         mng = plt.get_current_fig_manager()
