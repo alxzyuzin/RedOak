@@ -231,11 +231,11 @@ class ChartsData:
 
     def show(self, startvalue):
                
-        gs_kw = dict( height_ratios=[4, 1, 1])
-        # Define plot layout
-        fig, (ax0, ax1, ax2) = plt.subplots(3, 1,layout='constrained', gridspec_kw = gs_kw )
+         # Define plot layout
+        gs_kw = dict( height_ratios=[4, 1, 1, 1])
+        fig, (ax0, ax1, ax2, ax3) = plt.subplots(4, 1,layout='constrained', gridspec_kw = gs_kw )
         fig.tight_layout(h_pad = 0.5, w_pad = 0) # Set figure margins size
-        plt.legend(loc='upper left')
+        #plt.legend(loc='upper left')
         fig.set_size_inches(18,12) 
         #fig.suptitle('Historic prices for simbol ' + self.simbol, fontsize=16)
         # Create alias for X-axe values
@@ -288,40 +288,50 @@ class ChartsData:
         #fig.autofmt_xdate()
 
         #----------------------------------------------------------------------------------
+        # Display volumes
+        #----------------------------------------------------------------------------------
+        ax1.set_title('Volumes for simbol ' + self.__simbol)
+        ax1.grid(True)
+        ax1.plot(self.__date[startvalue:], self.__volume[startvalue:],
+                 label = "Volume", color='steelblue', linewidth = 1)
+        ax1.set_xlim(datemin, datemax)
+        
+
+        #----------------------------------------------------------------------------------
         # Display RSI
         #----------------------------------------------------------------------------------
         
-        ax1.set_title('RSI for simbol ' + self.__simbol)
-        ax1.grid(True)
+        ax2.set_title('RSI for simbol ' + self.__simbol)
+        ax2.grid(True)
         
-        ax1.plot(self.__date[startvalue:], self.__RSI[startvalue:],
+        ax2.plot(self.__date[startvalue:], self.__RSI[startvalue:],
                  label = "RSI", color='steelblue', linewidth = 1)
-        ax1.set_xlim(datemin, datemax)
-        ax1.set_ylim(-40, 40)
+        ax2.set_xlim(datemin, datemax)
+        ax2.set_ylim(-40, 40)
         # Define coords of rectangle's corners
         xcoords = [datemin, datemax, datemax, datemin]
         ycoords = [20, 20, -20, -20]
         # Draw a rectangle
-        ax1.fill(xcoords, ycoords, alpha = 0.4, color='lightsteelblue')
+        ax2.fill(xcoords, ycoords, alpha = 0.4, color='lightsteelblue')
         # Draw lines to display Overbought and Oversold Levels
         #ax1.axhline( y = 70, color = 'r', linewidth=1)
         #ax1.axhline( y = 30, color = 'r', linewidth=1 )
 
-        ax1.text(self.__date[startvalue + 10],23,"Overbought level", fontsize=10, color='gray')
-        ax1.text(self.__date[startvalue + 10],-30,"Oversold level", fontsize=10, color='gray')
-        ax1.legend(loc='lower left')    
+        ax2.text(self.__date[startvalue + 10],23,"Overbought level", fontsize=10, color='gray')
+        ax2.text(self.__date[startvalue + 10],-30,"Oversold level", fontsize=10, color='gray')
+        ax2.legend(loc='lower left')    
+        
         #----------------------------------------------------------------------------------
         # Display MACD
         #----------------------------------------------------------------------------------       
+               
+        ax3.set_title('MACD for simbol ' + self.__simbol)
+        ax3.grid(True)
         
-        
-        ax2.set_title('MACD for simbol ' + self.__simbol)
-        ax2.grid(True)
-        
-        ax2.plot(x, self.__MACD[startvalue:], label = "MACD", color='green', linewidth = 1)
-        ax2.plot(x, self.__MACDSinalLine[startvalue:], label = "Signal line", color='blue', linewidth = 1)
-        ax2.set_xlim(datemin, datemax)
-        ax2.legend(loc='upper left')
+        ax3.plot(x, self.__MACD[startvalue:], label = "MACD", color='green', linewidth = 1)
+        ax3.plot(x, self.__MACDSinalLine[startvalue:], label = "Signal line", color='blue', linewidth = 1)
+        ax3.set_xlim(datemin, datemax)
+        ax3.legend(loc='upper left')
         
         # Open full screen window
         mng = plt.get_current_fig_manager()

@@ -1,6 +1,23 @@
+import sys
+import argparse
 from stock.indicators import  ChartsData
+
+# FSELX
+# FSPTX
+
 def main():
-    stockData = ChartsData("FSELX",250)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-s", "--simbol", type=str)
+    
+    args = parser.parse_args()
+    simbol = args.simbol
+
+    #name_of_script = sys.argv[0]
+    #simbol = sys.argv[1]
+
+    print(simbol)
+
+    stockData = ChartsData(simbol,250)
     stockData.load()
     stockData.calcShortSMA(40)
     stockData.calcLongSMA(50)
