@@ -1,17 +1,14 @@
+import json
+
 
 class Simbol:
     def __init__(self, simbol:str, name:str, category:str, yearreturn:float, status:str):
         self.simbol = simbol
         self.status = status
-        self.description = name
+        self.name = name
         self.category = category
-        self.ytdreturn = yearreturn
-        self.dic = {}
-        self.dic['simbol'] = simbol
-        self.dic['status'] = status
-        self.dic['name'] = name
-        self.dic['category'] = category
-        self.dic['yearreturn'] = yearreturn
+        self.yearreturn = yearreturn
+     
 
 class SimbolsCollection:
     def __init__(self):
@@ -59,17 +56,30 @@ class SimbolsCollection:
             print("An I/O error occurred.")
         
     def save(self):
-        pass
+        simbol_dicts = [simbol.__dict__ for simbol in self.simbols]
+        with open('simbols.json', 'w') as file:
+            json.dump(simbol_dicts, file, indent=4)
 
+    def load(self):
+        # Read the JSON file
+        with open('simbols.json', 'r') as file:
+            simbol_dicts = json.load(file)
+        # Convert the list of dictionaries to a list of Person objects
+        return [Simbol(**simbol_dict) for simbol_dict in simbol_dicts]
+
+        
+        # Test required
     def delete(self, simbol:Simbol):
         for i in range(0,len(self.simbols)):
             if self.simbols[i].simbol == simbol.simbol:
                 break
         self.simbols.pop(i)
-
+          # Test required
+   
     def append(self, simbol):
         self.simbols.append(simbol)
 
+           # Test required
     def set_status(self, simbol:Simbol, new_status):
         for i in range(0,self.simbols):
             if self.simbols[i].simbol == simbol:
@@ -80,9 +90,11 @@ class SimbolsCollection:
 
 
 def main():
-    #s = Simbol('HHHHH','portolio','Fake simbol')
+   
     sl = SimbolsCollection()
     sl.load_csv("docs\\fondslist.csv")
+    sl.save()
+    simbols = sl.load()
     #sl.delete(s)
     i=1
 
