@@ -72,19 +72,19 @@ class SimbolsCollection:
     def delete(self, simbol:Simbol):
         for i in range(0,len(self.simbols)):
             if self.simbols[i].simbol == simbol.simbol:
+                self.simbols.pop(i)
                 break
-        self.simbols.pop(i)
+       
           # Test required
    
-    def append(self, simbol):
+    def append(self, simbol:Simbol):
         self.simbols.append(simbol)
 
            # Test required
     def set_status(self, simbol:Simbol, new_status):
         for i in range(0,self.simbols):
-            if self.simbols[i].simbol == simbol:
+            if self.simbols[i].simbol == simbol.simbol:
                 self.simbols[i].status = new_status
-                self.simbols[i].dic['status'] = new_status
                 break
        
 
