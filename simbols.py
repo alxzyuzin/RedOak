@@ -65,7 +65,8 @@ class SimbolsCollection:
         with open('simbols.json', 'r') as file:
             simbol_dicts = json.load(file)
         # Convert the list of dictionaries to a list of Person objects
-        return [Simbol(**simbol_dict) for simbol_dict in simbol_dicts]
+        self.simbols =  [Simbol(**simbol_dict) for simbol_dict in simbol_dicts]
+        return self.simbols
 
         
         # Test required

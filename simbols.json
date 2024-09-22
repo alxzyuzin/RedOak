@@ -1,14 +1,14 @@
 [
     {
         "simbol": "FSENX",
-        "status": "unselected",
+        "status": "portfolio",
         "name": "Fidelity Select Energy Portfolio (FSENX)",
         "category": "Equity Energy",
         "yearreturn": 4.6
     },
     {
         "simbol": "FSELX",
-        "status": "unselected",
+        "status": "portfolio",
         "name": "Fidelity Select Semiconductors Portfolio (FSELX)",
         "category": "Technology",
         "yearreturn": 45.33
@@ -141,7 +141,7 @@
     },
     {
         "simbol": "FSPTX",
-        "status": "unselected",
+        "status": "portfolio",
         "name": "Fidelity Select Technology Portfolio (FSPTX)",
         "category": "Technology",
         "yearreturn": 31.49

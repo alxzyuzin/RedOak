@@ -241,7 +241,7 @@ class ChartsData:
         # Create alias for X-axe values
         x = self.__date[startvalue:]
        
-        ax0.set_title('Historic prices for simbol ' + self.__simbol)
+        ax0.set_title(f'Historic prices for simbol {self.__simbol} (Last price:{self.__closePrice[-1]}).')
         ax0.grid(True)
         ax0.left = 0
         # Display daily close prices and moving averages
